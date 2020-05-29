@@ -29,10 +29,15 @@ python3 visualize.py config.py
 ## Contact information
 
 - [Bruno I. Grisci](https://orcid.org/0000-0003-4083-5881) - PhD student ([Institute of Informatics](https://www.inf.ufrgs.br/site/en) - [UFRGS](http://www.ufrgs.br/english/home))
+
 bigrisci@inf.ufrgs.br
-- [Mathias J. Krause](https://www.lbrg.kit.edu/~mjkrause/) - Adjunct Professor ([Institute for Applied and Numerical Mathematics 2](http://www.math.kit.edu/ianm2/en) - [KIT](http://www.kit.edu/english/index.php))
+
+- [Dr. Mathias J. Krause](https://www.lbrg.kit.edu/~mjkrause/) - ([Institute for Applied and Numerical Mathematics 2](http://www.math.kit.edu/ianm2/en) - [KIT](http://www.kit.edu/english/index.php))
+
 mathias.krause@kit.edu
-- [Marcio Dorn](https://orcid.org/0000-0001-8534-3480) - Adjunct Professor ([Institute of Informatics](https://www.inf.ufrgs.br/site/en) - [UFRGS](http://www.ufrgs.br/english/home))
+
+- [Dr. Marcio Dorn](https://orcid.org/0000-0001-8534-3480) - Adjunct Professor ([Institute of Informatics](https://www.inf.ufrgs.br/site/en) - [UFRGS](http://www.ufrgs.br/english/home))
+
 mdorn@inf.ufrgs.br
 
 
