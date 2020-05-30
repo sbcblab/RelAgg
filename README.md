@@ -28,7 +28,7 @@ python3 visualize.py config.py
 
 ## Datasets
 
-You can download the datasets used in the experiments [here](DATA/DATA.md).
+You can download the datasets used in the experiments [here](DATA/README.md).
 
 ## Contact information
 
@@ -40,7 +40,7 @@ You can download the datasets used in the experiments [here](DATA/DATA.md).
 
     - mathias.krause@kit.edu
 
-- [Dr. Marcio Dorn](https://orcid.org/0000-0001-8534-3480) - Adjunct Professor ([Institute of Informatics](https://www.inf.ufrgs.br/site/en) - [UFRGS](http://www.ufrgs.br/english/home))
+- [Dr. Marcio Dorn](https://orcid.org/0000-0001-8534-3480) - Associate Professor ([Institute of Informatics](https://www.inf.ufrgs.br/site/en) - [UFRGS](http://www.ufrgs.br/english/home))
 
     - mdorn@inf.ufrgs.br
 
