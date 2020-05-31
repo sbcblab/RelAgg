@@ -38,6 +38,19 @@ You can download the datasets used in the experiments [here](DATA/README.md).
 
 If you are looking for the trained Keras models and resulting table heatmaps from the main paper, you can find them [here](RESULTS).
 
+## Libraries
+
+This implementation of relevance aggregation uses the following [Python 3.7](https://www.python.org/) libraries:
+
+- [NumPy](https://numpy.org/)
+- [Pandas](https://pandas.pydata.org/)
+- [Matplotlib](https://matplotlib.org/)
+- [TensorFlow Keras](https://www.tensorflow.org/guide/keras)
+- [SciPy](https://www.scipy.org/)
+- [Scikit-learn](https://scikit-learn.org/stable/)
+- [LRP Toolbox](https://github.com/sebastian-lapuschkin/lrp_toolbox)
+- [DeepLIFT](https://github.com/kundajelab/deeplift)
+
 ## Contact information
 
 - [Bruno I. Grisci](https://orcid.org/0000-0003-4083-5881) - PhD student ([Institute of Informatics](https://www.inf.ufrgs.br/site/en) - [UFRGS](http://www.ufrgs.br/english/home))
