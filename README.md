@@ -1,8 +1,12 @@
 # Relevance aggregation for neural networks interpretability and knowledge discovery on tabular data
 
+Welcome!
+
+Relevance aggregation is a method for computing relevance scores for multilayer feed-forward neural networks trained on tabular data. It can be used to inspect the behavior of the trained models, identify biases, and for knowledge discovery. Besides the numerical values, the relevance scores can be visualized with table heatmaps and weighted t-SNE.
+
 ## How to use
 
-To configure all the hyperparameters of relevance aggregation, you only need to create a ```config.py``` file. An example can be downloaded [here](config.py).
+To configure all the hyperparameters of relevance aggregation, you only need to create a ```config.py``` file. An example can be downloaded [here](config.py). It also contains the necessary documentation.
 
 You will need Python 3 to run this code. Check if the needed libraries are installed with:
 
@@ -29,6 +33,10 @@ python3 visualize.py config.py
 ## Datasets
 
 You can download the datasets used in the experiments [here](DATA/README.md).
+
+## Results
+
+If you are looking for the trained Keras models and resulting table heatmaps from the main paper, you can find them [here](RESULTS).
 
 ## Contact information
 
