@@ -4,5 +4,6 @@ modules/__pycache__
 core
 DATA
 EXPERIMENTS
+experiments
 RESULTS
 *config.py
