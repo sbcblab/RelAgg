@@ -51,6 +51,9 @@ if __name__ == '__main__':
     if not os.path.exists(out_fold+'viz/'):
         os.makedirs(out_fold+'viz/')
 
+    if not os.path.exists(out_fold+'viz/sel/'):
+        os.makedirs(out_fold+'viz/sel/')        
+
     df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=0)
     df = RR_utils.check_dataframe(df, cfg.class_label, cfg.task)
     if cfg.task == 'classification':
@@ -114,7 +117,7 @@ if __name__ == '__main__':
                                     cat_rank_ids.append(col)
                     rank_id = cat_rank_ids
                 df_selection[cl] = rank_id
-                plot_pca.plot(trte_df[use], features=rank_id, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/', fold+1, use, cl, cfg.viz_method), method=cfg.viz_method, task=cfg.task)
+                plot_pca.plot(trte_df[use], features=rank_id, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/sel/', fold+1, use, cl, cfg.viz_method), method=cfg.viz_method, task=cfg.task)
                 # trying something new:
                 if not cfg.agglutinate:
                     if cfg.rank == "norm":
@@ -123,7 +126,7 @@ if __name__ == '__main__':
                         new_index = list(trte_df[use].columns)
                         new_index.remove(cfg.class_label)
                         scores = scores.reindex(new_index)
-                        plot_pca.plot(trte_df[use], norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/score_', fold+1, use, cl, cfg.viz_method), method='tsne', task=cfg.task, weights=scores)
+                        plot_pca.plot(trte_df[use], norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/weighted_', fold+1, use, cl, cfg.viz_method), method='tsne', task=cfg.task, weights=scores)
                 else:
                     print("\nWARNING: Can't show score weighted vizualization if agglutinate is true.")
 
@@ -151,4 +154,4 @@ if __name__ == '__main__':
                     cat_all_ids = all_ids
 
                 print('###\nCOMBINED SIZES: {}\n###'.format(len(all_ids)))
-                plot_pca.plot(trte_df[use], features=cat_all_ids, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/', fold+1, use, 'combine', cfg.viz_method), method=cfg.viz_method, task=cfg.task)
+                plot_pca.plot(trte_df[use], features=cat_all_ids, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/sel/', fold+1, use, 'combine', cfg.viz_method), method=cfg.viz_method, task=cfg.task)
