@@ -20,6 +20,8 @@ dataset_sep    = ","
 output_folder  = 'RESULTS'
 class_colors   = ['GREEN']
 viz_method     = 'tsne' # 'pca' or 'tsne'
+perplexity     = 50     # perplexity value for t-SNE
+n_iter         = 5000   # number of iterations for t-SNE
 #class_colors   = ['CYAN', 'BEIGE', 'DRKBRW']
 weights_constraints = True
 # List of neural networks layers for creation of keras sequential model,

@@ -96,7 +96,7 @@ if __name__ == '__main__':
             with open('{}mrmr/{}_{}_selection.txt'.format(out_fold, fold+1, dataset[1]), 'w') as sf:
                 for feat in mrmr_features[0:cfg.n_selection]:
                     sf.write(feat + '\n')
-            plot_pca.plot(df, features=mrmr_features[0:cfg.n_selection], norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name=mrmr_datafile.replace('.csv', '_{}.png'.format(cfg.viz_method)), method=cfg.viz_method)
+            plot_pca.plot(df, features=mrmr_features[0:cfg.n_selection], norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name=mrmr_datafile.replace('.csv', '_{}.png'.format(cfg.viz_method)), method=cfg.viz_method, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
             ranks_values.append(mrmr_features)
             ranks_labels.append('{}_{}'.format(fold+1, dataset[1]))
     

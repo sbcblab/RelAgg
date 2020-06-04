@@ -135,7 +135,7 @@ if __name__ == '__main__':
             N = len(df.index)
             print('\n{} classes, {} features, {} samples\n'.format(C, D, N)) 
 
-            plot_pca.plot(df, features=list(tree_features), norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}tree/{}_{}_{}.png'.format(out_fold, fold+1, dataset[1], cfg.viz_method), method=cfg.viz_method, task=cfg.task)
+            plot_pca.plot(df, features=list(tree_features), norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}tree/{}_{}_{}.png'.format(out_fold, fold+1, dataset[1], cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
 
     venn_df = RR_utils.venn(ranks_values, ranks_labels, len(feats_labels))
     print(venn_df)

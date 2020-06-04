@@ -36,7 +36,7 @@ def fast_wdist(A, B):
     B = B[0:int(len(B)/2)]
     return ((W*(A-B))**2).sum()**(0.5)
 
-def plot(df, features=None, norm=True, rescale=False, class_label='y', colors=list(colhex.keys()), markers=['o', 's', 'v', 'P', 'X', 'd', '*', 'h'], file_name='pca.png', method='tsne', task='classification', weights=None):
+def plot(df, features=None, norm=True, rescale=False, class_label='y', colors=list(colhex.keys()), markers=['o', 's', 'v', 'P', 'X', 'd', '*', 'h'], file_name='pca.png', method='tsne', task='classification', weights=None, perplexity=50, n_iter=5000):
     # Visualization
 
     marker_size = 50
@@ -70,11 +70,6 @@ def plot(df, features=None, norm=True, rescale=False, class_label='y', colors=li
         xlab = 'PC 1 ({})'.format(round(pca.explained_variance_ratio_[0], 4))
         ylab = 'PC 2 ({})'.format(round(pca.explained_variance_ratio_[1], 4))
     elif method == 'tsne':
-        if task == 'classification':
-            perplexity = 50
-        elif task == 'regression':
-            perplexity = 50
-        n_iter     = 5000
         if len(features) > 50 and weights is None:
             pca = PCA(n_components=50)
             principalComponents = pca.fit_transform(x)

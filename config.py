@@ -30,6 +30,8 @@ kendall_tau    = False        # if True, the kendall tau difference between the 
 class_colors   = ['GREEN', 'ORANGE'] # list of colors to be assigned to the classes in the data, options as below:
                                      # 'RED', 'BLUE', 'YELLOW', 'GREEN', 'ORANGE', 'BLACK', 'CYAN', 'SILVER', 'MAGENTA', 'CREAM', 'DRKBRW', 'BEIGE', 'WHITE'
 viz_method     = 'tsne' # 'pca' or 'tsne', use 'tsne' for the weighted t-SNE
+perplexity     = 50     # perplexity value for t-SNE
+n_iter         = 5000   # number of iterations for t-SNE
 
 # List of neural networks layers for creation of keras sequential model,
 # except the input and output layers that are created based on the number of input features, number of classes, and type of task. 
