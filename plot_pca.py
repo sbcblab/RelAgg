@@ -36,6 +36,12 @@ def fast_wdist(A, B):
     B = B[0:int(len(B)/2)]
     return ((W*(A-B))**2).sum()**(0.5)
 
+def wgt_cosine_distance(A, B):
+    W = A[int(len(A)/2):]
+    A = A[0:int(len(A)/2)]
+    B = B[0:int(len(B)/2)]
+    return 1.0 - (((A/np.linalg.norm(A))*(B/np.linalg.norm(B)))*(1.0-W)).sum()
+
 def plot(df, features=None, norm=True, rescale=False, class_label='y', colors=list(colhex.keys()), markers=['o', 's', 'v', 'P', 'X', 'd', '*', 'h'], file_name='pca.png', method='tsne', task='classification', weights=None, perplexity=50, n_iter=5000):
     # Visualization
 
@@ -79,7 +85,8 @@ def plot(df, features=None, norm=True, rescale=False, class_label='y', colors=li
         else:
             W = np.tile(weights, (x.shape[0],1))
             b = np.concatenate((x, W), axis=1)
-            principalComponents = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, metric=fast_wdist).fit_transform(b)
+            #principalComponents = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, metric=fast_wdist).fit_transform(b)
+            principalComponents = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, metric=wgt_cosine_distance).fit_transform(b)
         xlab = 'Component 1'
         ylab = 'Component 2'
     else:

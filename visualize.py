@@ -34,6 +34,8 @@ colhex = {
 TRAINTEST = ['train', 'test']
 SCORE_LABEL = 'score'
 
+ONLY_WEIGHTED = False
+
 ####################################################################################
 
 if __name__ == '__main__':
@@ -66,7 +68,8 @@ if __name__ == '__main__':
     n_classes  = len(CLASS_LABELS)
     n_features = len(df.columns.values) - 1
 
-    plot_pca.plot(df, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}.pdf'.format(out_fold+'viz/', cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
+    if not ONLY_WEIGHTED:
+        plot_pca.plot(df, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}.pdf'.format(out_fold+'viz/', cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
 
     if cfg.k > 1:
         usage = TRAINTEST
@@ -79,7 +82,8 @@ if __name__ == '__main__':
         for use in usage:
             print('\n###### {}-FOLD: {}\n'.format(fold+1, use))
 
-            plot_pca.plot(trte_df[use], norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}.pdf'.format(out_fold+'viz/', fold+1, use, cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
+            if not ONLY_WEIGHTED:
+                plot_pca.plot(trte_df[use], norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}.pdf'.format(out_fold+'viz/', fold+1, use, cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
 
             data_file = '{}_{}_{}_datasheet.csv'.format(out_file, fold+1, use)
             rele_file = '{}_{}_{}_relsheet.csv'.format(out_file, fold+1, use)
@@ -117,7 +121,8 @@ if __name__ == '__main__':
                                     cat_rank_ids.append(col)
                     rank_id = cat_rank_ids
                 df_selection[cl] = rank_id
-                plot_pca.plot(trte_df[use], features=rank_id, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/sel/', fold+1, use, cl, cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
+                if not ONLY_WEIGHTED:
+                    plot_pca.plot(trte_df[use], features=rank_id, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/sel/', fold+1, use, cl, cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
                 # trying something new:
                 if not cfg.agglutinate:
                     if cfg.rank == "norm":
@@ -154,4 +159,5 @@ if __name__ == '__main__':
                     cat_all_ids = all_ids
 
                 print('###\nCOMBINED SIZES: {}\n###'.format(len(all_ids)))
-                plot_pca.plot(trte_df[use], features=cat_all_ids, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/sel/', fold+1, use, 'combine', cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
+                if not ONLY_WEIGHTED:
+                    plot_pca.plot(trte_df[use], features=cat_all_ids, norm=cfg.standardized, rescale=cfg.rescaled, class_label=cfg.class_label, colors=cfg.class_colors, file_name='{}{}_{}_{}_{}.pdf'.format(out_fold+'viz/sel/', fold+1, use, 'combine', cfg.viz_method), method=cfg.viz_method, task=cfg.task, perplexity=cfg.perplexity, n_iter=cfg.n_iter)
