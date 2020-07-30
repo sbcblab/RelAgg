@@ -85,8 +85,8 @@ def plot(df, features=None, norm=True, rescale=False, class_label='y', colors=li
         else:
             W = np.tile(weights, (x.shape[0],1))
             b = np.concatenate((x, W), axis=1)
-            #principalComponents = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, metric=fast_wdist).fit_transform(b)
-            principalComponents = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, metric=wgt_cosine_distance).fit_transform(b)
+            principalComponents = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, metric=fast_wdist).fit_transform(b)
+            #principalComponents = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, metric=wgt_cosine_distance).fit_transform(b)
         xlab = 'Component 1'
         ylab = 'Component 2'
     else:
