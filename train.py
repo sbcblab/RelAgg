@@ -136,16 +136,19 @@ if __name__ == '__main__':
             model.add(Dense(C, activation=actfun, kernel_constraint=non_neg(), bias_constraint=non_neg()))
             #model.add(Dense(C, activation=actfun))
 
+        #optimizer = 'adam'
+        optimizer = 'SGD'
+
         if cfg.task == 'classification':
             # Compile model
-            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'], weighted_metrics=['accuracy'])
+            model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'], weighted_metrics=['accuracy'])
             # Fit the model
-            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, class_weight=class_weights_index, verbose=2)
+            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, class_weight=class_weights_index, verbose=2)
         elif cfg.task == 'regression':
             # Compile model
-            model.compile(loss='mean_squared_error', optimizer='adam')
+            model.compile(loss='mean_squared_error', optimizer=optimizer)
             # Fit the model
-            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, verbose=2)
+            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, verbose=2)
 
         #save the network
         model.save("{}_{}.hdf5".format(out_file, fold+1), include_optimizer = False)
