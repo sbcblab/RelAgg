@@ -4,6 +4,7 @@
 import os
 import sys
 import importlib
+import importlib.util
 import numpy as np
 import pandas as pd
 import seaborn as sn
@@ -47,7 +48,10 @@ if __name__ == '__main__':
     else:    
         spt_file = '{}split.py'.format(out_fold)
     print(spt_file)
-    spt = importlib.import_module(spt_file.replace('/','.').replace('.py',''))
+    #spt = importlib.import_module(spt_file.replace('/','.').replace('.py',''))
+    spec = importlib.util.spec_from_file_location(spt_file.replace('/','.').replace('.py',''), spt_file) 
+    spt  = importlib.util.module_from_spec(spec) 
+    spec.loader.exec_module(spt) 
     splits = spt.splits
 
     if not os.path.exists(out_fold+'viz/'):

@@ -7,6 +7,7 @@ import numpy as np ; na = np.newaxis
 from scipy.stats import gmean
 import pandas as pd
 import importlib
+import importlib.util
 from collections import namedtuple
 from tensorflow.keras.models import load_model
 
@@ -302,7 +303,12 @@ if __name__ == '__main__':
     else:    
         spt_file = '{}split.py'.format(out_fold)
     print(spt_file)
-    spt = importlib.import_module(spt_file.replace('/','.').replace('.py',''))
+    #spt = importlib.import_module(spt_file.replace('/','.').replace('.py',''))
+
+    spec = importlib.util.spec_from_file_location(spt_file.replace('/','.').replace('.py',''), spt_file) 
+    spt  = importlib.util.module_from_spec(spec) 
+    spec.loader.exec_module(spt) 
+
     splits = spt.splits
 
     if not os.path.exists(out_fold+'relevance_eval/'):

@@ -74,7 +74,10 @@ if __name__ == '__main__':
             sf.write("from collections import namedtuple\nfrom numpy import array\nSplit = namedtuple('Split', ['tr', 'te'])\nsplits = {}".format(splits))
         np.set_printoptions(threshold=1000)
     else:
-        spt = importlib.import_module(cfg.cv_splits.replace('/','.').replace('.py',''))
+        #spt = importlib.import_module(cfg.cv_splits.replace('/','.').replace('.py',''))
+        spec = importlib.util.spec_from_file_location(cfg.cv_splits.replace('/','.').replace('.py',''), cfg.cv_splits) 
+        spt  = importlib.util.module_from_spec(spec) 
+        spec.loader.exec_module(spt)         
         splits = spt.splits
 
     tr_accuracy = []

@@ -21,6 +21,10 @@ try:
 except:
     print('Could not import importlib')
 try:
+    import importlib.util
+except:
+    print('Could not import importlib.util')
+try:
     from collections import namedtuple
 except:
     print('Could not import namedtuple from collections')
