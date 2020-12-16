@@ -114,7 +114,7 @@ if __name__ == '__main__':
         usage = TRAINTEST
     else:
         usage = TRAINTEST[0:1]
-    for fold in range(cfg.k):
+    for fold in range(max(cfg.k, 1)):
         wb = Workbook()
         sheets = {TRAINTEST[0]: wb.active, TRAINTEST[1]: wb.create_sheet()}
         for use in usage:
