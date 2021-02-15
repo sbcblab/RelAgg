@@ -30,7 +30,7 @@ And for the weighted t-SNE visualization, run:
 python3 visualize.py config.py
 ```
 
-## Datasets
+## Data sets
 
 You can download the datasets used in the experiments [here](DATA/README.md).
 
@@ -50,6 +50,24 @@ This implementation of relevance aggregation uses the following [Python 3.7](htt
 - [Scikit-learn](https://scikit-learn.org/stable/)
 - [LRP Toolbox](https://github.com/sebastian-lapuschkin/lrp_toolbox)
 - [DeepLIFT](https://github.com/kundajelab/deeplift)
+
+## How to cite
+
+If you use our code, methods, or results in your research, please consider citing the main publication of relevance aggregation:
+
+- Bruno Iochins Grisci, Mathias J. Krause, Marcio Dorn. _Relevance aggregation for neural networks interpretability and knowledge discovery on tabular data_, Information Sciences, Volume 559, June **2021**, Pages 111-129, DOI: [10.1016/j.ins.2021.01.052](https://doi.org/10.1016/j.ins.2021.01.052)
+
+Bibtex entry:
+```
+@article{grisci2021relevance,
+  title={Relevance aggregation for neural networks interpretability and knowledge discovery on tabular data},
+  author={Grisci, Bruno Iochins and Krause, Mathias J and Dorn, Marcio},
+  journal={Information Sciences},
+  year={2021},
+  doi = {10.1016/j.ins.2021.01.052},
+  publisher={Elsevier}
+}
+```
 
 ## Contact information
 
