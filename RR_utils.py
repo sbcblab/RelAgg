@@ -167,7 +167,7 @@ def write_model(model, file_name):
                 if act == 'Relu':
                     act = 'Rect'
                 elif act == 'Softmax':
-                    act = 'Rect' # Write softmax layer as relu for LRP
+                    act = 'Flatten' # Write softmax layer as relu for LRP
                 elif act == 'Linear':
                     act = 'Rect'
                 print(act)

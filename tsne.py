@@ -127,5 +127,5 @@ if __name__ == '__main__':
     print(COL)
 
     ax = utilstsne.plot(embedding, y, colors=COL, title=os.path.basename(cfg.dataset_file).replace('.csv',''), draw_centers=True, draw_cluster_labels=False, s=10)
-    plt.savefig(os.path.basename(cfg.dataset_file).replace('.csv','_tsne.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.basename(cfg.dataset_file).replace('.csv','_force_plot.pdf'), bbox_inches='tight')
 
