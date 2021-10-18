@@ -60,7 +60,7 @@ if __name__ == '__main__':
     if not os.path.exists(out_fold+'viz/sel/'):
         os.makedirs(out_fold+'viz/sel/')        
 
-    df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=0)
+    df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index)
     df = RR_utils.check_dataframe(df, cfg.class_label, cfg.task)
     if cfg.task == 'classification':
         CLASS_LABELS = list(np.sort(df[cfg.class_label].astype(str).unique()))

@@ -77,7 +77,7 @@ def plot(df, features=None, norm=True, rescale=False, class_label='y', colors=li
         ylab = 'PC 2 ({})'.format(round(pca.explained_variance_ratio_[1], 4))
     elif method == 'tsne':
         if len(features) > 50 and weights is None:
-            pca = PCA(n_components=50)
+            pca = PCA(n_components=min(50, df.shape[0]))
             principalComponents = pca.fit_transform(x)
             principalComponents = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter).fit_transform(principalComponents)
         elif weights is None:
