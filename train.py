@@ -20,6 +20,8 @@ from tensorflow.keras.constraints import max_norm
 from tensorflow.keras.constraints import non_neg
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.regularizers import l1
+from tensorflow.keras.regularizers import l2
 
 import RR_utils
 
@@ -106,6 +108,19 @@ if __name__ == '__main__':
             class_weights_index = RR_utils.get_class_weights(np.sort(df[cfg.class_label].unique()), tr_df[cfg.class_label].values, index_type='index')
             print('\nClass weights:\n', class_weights_index, '\n')
 
+
+        regularization = cfg.regularization
+        
+        if cfg.regularizer == 'l1':
+            l_reg = l1
+        elif cfg.regularizer == 'l2':
+            l_reg = l2
+        elif cfg.regularizer is None:
+            l_reg = l1
+            regularization = 0.0
+        else:
+            raise Exception("Regularizer not found: {}".format(cfg.regularizer))
+
         K.clear_session()
         input_layer_exists = False
         model = Sequential()
@@ -113,14 +128,14 @@ if __name__ == '__main__':
             if layer[0].lower().strip() == 'dense':
                 if input_layer_exists:
                     if cfg.weights_constraints:
-                        model.add(Dense(int(layer[1]), activation=layer[2].lower().strip(), bias_constraint=RR_utils.NonPos()))
+                        model.add(Dense(int(layer[1]), activation=layer[2].lower().strip(), kernel_regularizer=l_reg(regularization), bias_regularizer=l_reg(regularization), bias_constraint=RR_utils.NonPos()))
                     else:
-                        model.add(Dense(int(layer[1]), activation=layer[2].lower().strip()))
+                        model.add(Dense(int(layer[1]), activation=layer[2].lower().strip(), kernel_regularizer=l_reg(regularization), bias_regularizer=l_reg(regularization)))
                 else:
                     if cfg.weights_constraints:
-                        model.add(Dense(int(layer[1]), activation=layer[2].lower().strip(), bias_constraint=RR_utils.NonPos(), input_dim=D))
+                        model.add(Dense(int(layer[1]), activation=layer[2].lower().strip(), kernel_regularizer=l_reg(regularization), bias_regularizer=l_reg(regularization), bias_constraint=RR_utils.NonPos(), input_dim=D))
                     else:
-                        model.add(Dense(int(layer[1]), activation=layer[2].lower().strip(), input_dim=D))
+                        model.add(Dense(int(layer[1]), activation=layer[2].lower().strip(), kernel_regularizer=l_reg(regularization), bias_regularizer=l_reg(regularization), input_dim=D))
                     input_layer_exists = True
             elif layer[0].lower().strip() == 'dropout':
                 model.add(Dropout(float(layer[1])))
@@ -134,9 +149,9 @@ if __name__ == '__main__':
             actfun = 'linear'
 
         if cfg.weights_constraints:
-            model.add(Dense(C, activation=actfun, kernel_constraint=non_neg(), bias_constraint=RR_utils.IsZero()))
+            model.add(Dense(C, activation=actfun, kernel_constraint=non_neg(), kernel_regularizer=l_reg(regularization), bias_regularizer=l_reg(regularization), bias_constraint=RR_utils.IsZero()))
         else:
-            model.add(Dense(C, activation=actfun, kernel_constraint=non_neg(), bias_constraint=non_neg()))
+            model.add(Dense(C, activation=actfun, kernel_constraint=non_neg(), kernel_regularizer=l_reg(regularization), bias_regularizer=l_reg(regularization), bias_constraint=non_neg()))
             #model.add(Dense(C, activation=actfun))
 
         #optimizer = 'adam'

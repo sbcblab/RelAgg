@@ -6,17 +6,19 @@ task           = "classification" # "classification" or "regression"
 class_label    = "y"              # label of the column with the classes or target values
 dataset_sep    = ","              # use ',' to separate columns in the dataset
 output_folder  = 'RESULTS'        # name of directory in which the results will be saved
-index_col      = 0
-row_index      = 0
+row_index      = 0                # The column that has the row index, None if no index
 
 standardized        = False # True if data should be normalized with the z-norm (M=0.0, std=1.0)
 rescaled            = False # True if data should be scaled between 0 and 1
 train_epochs        = 150   # training epochs for training the neural networks
 batch_size          = 4     # batch size for training the neural networks
 weights_constraints = True  # True if neural network biases should be <= 0.0 and if weights and biases in the output layer must be >= 0.0 
-k                   = 3    # number of folds for stratified k-fold cross-validation, if k <= 1 there is no partition and will use all samples
+k                   = 3     # number of folds for stratified k-fold cross-validation, if k <= 1 there is no partition and will use all samples
 cv_splits           = None  # if None, the folds of stratified k-fold cross-validation will be divided randomly, if file path to split.py it will use split in the file
 n_selection         = 2     # number of top ranked input features to be considered for further analyses
+
+regularizer         = 'l1'  # weights regularizer: 'l1', 'l2', or None
+regularization      = 0.01  # parameter for the regularizer, 0.0 if not used
 
 rel_rule       = ['alphabeta', 2.0] # the rule for computing the relevance, should be one of the below:
                                     # ['simple'], ['epsilon', epsilon], ['alphabeta', alpha], ['flat'], ['ww'], ['deeplift', reference]

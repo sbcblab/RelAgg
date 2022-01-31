@@ -11,14 +11,18 @@ import RR_utils
 
 def main():
     config_file = sys.argv[1]
+    class_col   = sys.argv[2]
+    cv_fold     = sys.argv[3]
+    fold_type   = sys.argv[4]
+
     cfg = importlib.import_module(config_file.replace('/','.').replace('.py',''))
     df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index)
     df = RR_utils.check_dataframe(df, cfg.class_label, cfg.task)
 
-    relevance = pd.read_csv(cfg.output_folder + '/' + os.path.basename(cfg.dataset_file).replace('.csv','/') + os.path.basename(cfg.dataset_file).replace('.csv', '_1_train_datasheet.csv'), delimiter=cfg.dataset_sep, header=0, index_col=0)
+    relevance = pd.read_csv(cfg.output_folder + '/' + os.path.basename(cfg.dataset_file).replace('.csv','/') + os.path.basename(cfg.dataset_file).replace('.csv', '_{}_{}_datasheet.csv'.format(cv_fold, fold_type)), delimiter=cfg.dataset_sep, header=0, index_col=0)
 
     print(df)
-    relevance.rename(columns={'score':'value'}, inplace=True)
+    relevance.rename(columns={class_col:'value'}, inplace=True)
     print(relevance)
     scores = relevance['value']
     scores.dropna(inplace=True)
@@ -31,7 +35,10 @@ def main():
     scores = scores.reindex(df.columns)
     scores.index.name = 'feature'
     print(scores)
-    scores.to_csv(cfg.output_folder + '/' + os.path.basename(cfg.dataset_file).replace('.csv','/') + 'RelAgg_' + os.path.basename(cfg.dataset_file))
+    print(scores.mean(), scores.std())
+    print(np.median(scores))
+    print(scores.min(), scores.max())
+    scores.to_csv(cfg.output_folder + '/' + os.path.basename(cfg.dataset_file).replace('.csv','/') + 'RelAgg_' + class_col + '_' + os.path.basename(cfg.dataset_file))
 
 if __name__ == '__main__': 
     main()
