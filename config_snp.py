@@ -10,8 +10,8 @@ row_index      = 0                # The column that has the row index, None if n
 
 standardized        = False # True if data should be normalized with the z-norm (M=0.0, std=1.0)
 rescaled            = True # True if data should be scaled between 0 and 1
-train_epochs        = 150   # training epochs for training the neural networks
-batch_size          = 4     # batch size for training the neural networks
+train_epochs        = 200   # training epochs for training the neural networks
+batch_size          = 16     # batch size for training the neural networks
 weights_constraints = True  # True if neural network biases should be <= 0.0 and if weights and biases in the output layer must be >= 0.0 
 k                   = 3     # number of folds for stratified k-fold cross-validation, if k <= 1 there is no partition and will use all samples
 cv_splits           = None  # if None, the folds of stratified k-fold cross-validation will be divided randomly, if file path to split.py it will use split in the file
@@ -42,14 +42,10 @@ n_iter         = 5000   # number of iterations for t-SNE
 # The inputs are automatically set from the number of features in the dataset.
 # Available layers types are dense and dropout.
 # Available activation functions are 'relu'
-layers = [['dense', 32, 'relu'],   
-          #['dropout', 0.5], 
-          ['dense', 32, 'relu'],   
-          #['dropout', 0.5],   
-          ['dense', 32, 'relu'],   
-          #['dropout', 0.5], 
-          ['dense', 32, 'relu'],   
-          #['dropout', 0.5],                                                                     
+layers = [['dense', 128, 'relu'],   
+          ['dense', 128, 'relu'],     
+          ['dense', 64, 'relu'],   
+          ['dense', 32, 'relu'],                                                                      
          ]
 
 # NOTES:

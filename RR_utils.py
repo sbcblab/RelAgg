@@ -211,7 +211,10 @@ def save_usage(df, splits, file_name):
 def confusion_matrix(df, class_label, model, file_name):
     X, Y = get_XY(df, 'classification', class_label)
     classes = np.sort(df[class_label].unique())
-    y_pred = model.predict_classes(X)
+    #y_pred = model.predict_classes(X)
+    # https://stackoverflow.com/questions/68836551/keras-attributeerror-sequential-object-has-no-attribute-predict-classes
+    y_pred1 = model.predict(X)
+    y_pred  = np.argmax(y_pred1, axis=1)
     con_mat = tensorflow.math.confusion_matrix(labels=np.array([np.where(classes==c)[0][0] for c in df[class_label].values]), predictions=y_pred).numpy()
     con_mat_norm = np.around(con_mat.astype('float') / con_mat.sum(axis=1)[:, np.newaxis], decimals=2)
     con_mat_df = pd.DataFrame(con_mat_norm, index = classes, columns = classes)
