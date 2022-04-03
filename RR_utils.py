@@ -268,7 +268,11 @@ def save_outputs(df, splits, task, class_label, model, file_name, rescale, stand
     X, Y = get_XY(df, task, class_label)
     pred = model.predict(X)
     if task == 'classification':
-        classification = model.predict_classes(X)
+        #classification = model.predict_classes(X)
+        # https://stackoverflow.com/questions/68836551/keras-attributeerror-sequential-object-has-no-attribute-predict-classes
+        classification1 = model.predict(X)
+        classification  = np.argmax(classification1, axis=1)
+
         classes = np.sort(df[class_label].unique())
         
         model2 = Sequential()
