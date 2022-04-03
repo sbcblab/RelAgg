@@ -284,6 +284,7 @@ def heatsheets(data, ranking, out, ys, class_label, use, agg, file_name):
     dataT  = data.T
     rank_sum = ranking[ranking.columns[-(1+len(ys)):]].copy()
     rank_sum = rank_sum.join(dataT.reindex(rank_sum.index))
+    print(out)
     out_part = out.loc[out['usage'] == use].copy()
     out_part = out_part.T
     for label in [SCORE_LABEL] + list(ys):
@@ -333,7 +334,7 @@ if __name__ == '__main__':
     for fold in range(len(splits)):
         
         print('\n###### {}-FOLD:\n'.format(fold+1))
-        out = pd.read_csv('{}_{}_out.csv'.format(out_file, fold+1), delimiter=cfg.dataset_sep, header=0, index_col=0)
+        out = pd.read_csv('{}_{}_out.csv'.format(out_file, fold+1), delimiter=',', header=0, index_col=0)
         #load a neural network
 
         print('# Reading neural network')
@@ -393,7 +394,8 @@ if __name__ == '__main__':
             if cfg.kendall_tau:
                 rank_dist(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{}_rank_dist.csv'.format(out_fold+'relevance_eval/', fold+1, dataset[1]))
             rank_venn(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{}_rank_venn.csv'.format(out_fold+'relevance_eval/', fold+1, dataset[1]))
-
+            print(out)
+            (print('out out'))
             heatsheets(rel, ranking, out, sort_class, cfg.class_label, dataset[1], cfg.agglutinate, '{}_{}_{}_relsheet.csv'.format(out_file, fold+1, dataset[1]))
             heatsheets(dataset[2], ranking, out, sort_class, cfg.class_label, dataset[1], cfg.agglutinate, '{}_{}_{}_datasheet.csv'.format(out_file, fold+1, dataset[1]))
 

@@ -19,7 +19,7 @@ def main():
     df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index)
     df = RR_utils.check_dataframe(df, cfg.class_label, cfg.task)
 
-    relevance = pd.read_csv(cfg.output_folder + '/' + os.path.basename(cfg.dataset_file).replace('.csv','/') + os.path.basename(cfg.dataset_file).replace('.csv', '_{}_{}_datasheet.csv'.format(cv_fold, fold_type)), delimiter=cfg.dataset_sep, header=0, index_col=0)
+    relevance = pd.read_csv(cfg.output_folder + '/' + os.path.basename(cfg.dataset_file).replace('.csv','/') + os.path.basename(cfg.dataset_file).replace('.csv', '_{}_{}_datasheet.csv'.format(cv_fold, fold_type)), delimiter=',', header=0, index_col=0)
 
     print(df)
     relevance.rename(columns={class_col:'value'}, inplace=True)

@@ -62,7 +62,7 @@ if __name__ == '__main__':
     #print("%d training samples" % x_train.shape[0])
     #print("%d test samples" % x_test.shape[0])
 
-    rel = pd.read_csv("RESULTS/3_5in1000_1000/3_5in1000_1000_1_train_relevance.csv", delimiter=cfg.dataset_sep, header=0, index_col=0)
+    rel = pd.read_csv("RESULTS/3_5in1000_1000/3_5in1000_1000_1_train_relevance.csv", delimiter=',', header=0, index_col=0)
     print(rel)
     #rel = rel.abs().div(rel.abs().max(axis=1), axis=0)
     print(rel)

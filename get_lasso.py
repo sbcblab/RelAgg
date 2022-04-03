@@ -60,7 +60,7 @@ if __name__ == '__main__':
     #for fold in range(len(splits)):
     for fold in range(1):
         print('\n###### {}-FOLD:\n'.format(fold+1))
-        out = pd.read_csv('{}_{}_out.csv'.format(out_file, fold+1), delimiter=cfg.dataset_sep, header=0, index_col=0)
+        out = pd.read_csv('{}_{}_out.csv'.format(out_file, fold+1), delimiter=',', header=0, index_col=0)
         #load a neural network
 
         tr_df, te_df, mean_vals, std_vals, min_vals, max_vals = RR_utils.split_data(df, splits[fold], cfg.class_label, cfg.standardized, cfg.rescaled) 
