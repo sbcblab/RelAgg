@@ -298,7 +298,7 @@ def save_outputs(df, splits, task, class_label, model, file_name, rescale, stand
 
 def get_class_weights(labels, values, index_type='label'):
     # https://androidkt.com/set-class-weight-for-imbalance-dataset-in-keras/
-    class_weights_values = class_weight.compute_class_weight('balanced', labels, values)
+    class_weights_values = class_weight.compute_class_weight(class_weight='balanced', classes=labels, y=values)
     if index_type == 'label':
         return dict(zip(labels, class_weights_values))
     elif index_type == 'index':
