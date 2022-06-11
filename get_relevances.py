@@ -331,73 +331,80 @@ if __name__ == '__main__':
     ranks_values = []
     ranks_labels = []
 
+    cp_list = list(range(cfg.checkpoint, cfg.train_epochs+1, cfg.checkpoint))
+    if cp_list[-1] != cfg.train_epochs:
+        cp_list.append(cfg.train_epochs)
+
     for fold in range(len(splits)):
         
         print('\n###### {}-FOLD:\n'.format(fold+1))
-        out = pd.read_csv('{}_{}_out.csv'.format(out_file, fold+1), delimiter=',', header=0, index_col=0)
-        #load a neural network
+        
+        for cp in cp_list: 
 
-        print('# Reading neural network')
-        model = load_model('{}_{}.hdf5'.format(out_file, fold+1), custom_objects={'NonPos': RR_utils.NonPos, 'IsZero': RR_utils.IsZero}, compile=False)
-        if cfg.rel_rule[0] == 'deeplift':
-            nn_lift =\
-                      kc.convert_model_from_saved_files(
-                      '{}_{}.hdf5'.format(out_file, fold+1),
-                      nonlinear_mxts_mode=deeplift.layers.NonlinearMxtsMode.DeepLIFT_GenomicsDefault)
-                      #nonlinear_mxts_mode=deeplift.layers.NonlinearMxtsMode.Rescale)   
-        else:
-            nn_file = '{}_{}.txt'.format(out_file, fold+1)
-            RR_utils.write_model(model, nn_file)
-            nn = model_io.read(nn_file)           
+            out = pd.read_csv('{}_{}_{:04d}_out.csv'.format(out_file, fold+1, cp), delimiter=',', header=0, index_col=0)
 
-        tr_df, te_df, mean_vals, std_vals, min_vals, max_vals = RR_utils.split_data(df, splits[fold], cfg.class_label, cfg.standardized, cfg.rescaled) 
-        tr_df2, te_df2, mean_vals2, std_vals2, min_vals2, max_vals2 = RR_utils.split_data(df, splits[fold], cfg.class_label, False, False) 
-
-        if te_df.empty:
-            l = [(tr_df, 'train', tr_df2)]
-        else:
-            l = [(tr_df, 'train', tr_df2), (te_df, 'test', te_df2)]
-        for dataset in l:
-            print('### {}:'.format(dataset[1]))
-
-            if cfg.rel_rule[0] != 'deeplift':
-                rel = compute_relevance(dataset[0], nn, cfg.task, [cfg.class_label], cfg.rel_class, cfg.rel_rule, '{}_{}_{}_relevance.csv'.format(out_file, fold+1, dataset[1]))
+            #load a neural network
+            print('# Reading neural network {:04d}'.format(cp))
+            model = load_model('{}_{}_{:04d}.hdf5'.format(out_file, fold+1, cp), custom_objects={'NonPos': RR_utils.NonPos, 'IsZero': RR_utils.IsZero}, compile=False)
+            if cfg.rel_rule[0] == 'deeplift':
+                nn_lift =\
+                          kc.convert_model_from_saved_files(
+                          '{}_{}_{:04d}.hdf5'.format(out_file, fold+1, cp),
+                          nonlinear_mxts_mode=deeplift.layers.NonlinearMxtsMode.DeepLIFT_GenomicsDefault)
+                          #nonlinear_mxts_mode=deeplift.layers.NonlinearMxtsMode.Rescale)   
             else:
-                rel = compute_lift(dataset[0], nn_lift, model, cfg.task, [cfg.class_label], cfg.rel_class, cfg.rel_rule, cfg.batch_size, '{}_{}_{}_relevance.csv'.format(out_file, fold+1, dataset[1]))
+                nn_file = '{}_{}_{:04d}.txt'.format(out_file, fold+1, cp)
+                RR_utils.write_model(model, nn_file)
+                nn = model_io.read(nn_file)           
 
-            if cfg.agglutinate:
-                rel = agglutinate(rel)
+            tr_df, te_df, mean_vals, std_vals, min_vals, max_vals = RR_utils.split_data(df, splits[fold], cfg.class_label, cfg.standardized, cfg.rescaled) 
+            tr_df2, te_df2, mean_vals2, std_vals2, min_vals2, max_vals2 = RR_utils.split_data(df, splits[fold], cfg.class_label, False, False) 
 
-            for cl in sort_class:
-                if cl in list(rel.index):
-                    rel.rename(index={cl:'{}_'.format(cl)},inplace=True)
-                    dataset[0].rename(index={cl:'{}_'.format(cl)},inplace=True)
-                    dataset[2].rename(index={cl:'{}_'.format(cl)},inplace=True)
-                    print('\nWARNING: index {} was changed to {}_ due to name collision with a class label.\n'.format(cl, cl))
+            if te_df.empty:
+                l = [(tr_df, 'train', tr_df2)]
+            else:
+                l = [(tr_df, 'train', tr_df2), (te_df, 'test', te_df2)]
+            for dataset in l:
+                print('### {}:'.format(dataset[1]))
 
-            compute_rel_stats(rel, '{}_{}_{}_rel_stats.csv'.format(out_fold+'relevance_eval/', fold+1, dataset[1]))
-            
-            if cfg.task == 'classification':
-                ranking = rank(rel, dataset[0][cfg.class_label], cfg.rank, cfg.mean_type, sort_class, '{}{}_{}_rank.csv'.format(out_fold+'relevance_eval/', fold+1, dataset[1]))
-            elif cfg.task == 'regression':
-                tc = target_classes.loc[rel.index]
-                ranking = rank(rel, tc[0], cfg.rank, cfg.mean_type, sort_class, '{}{}_{}_rank.csv'.format(out_fold+'relevance_eval/', fold+1, dataset[1]))
+                if cfg.rel_rule[0] != 'deeplift':
+                    rel = compute_relevance(dataset[0], nn, cfg.task, [cfg.class_label], cfg.rel_class, cfg.rel_rule, '{}_{}_{:04d}_{}_relevance.csv'.format(out_file, fold+1, cp, dataset[1]))
+                else:
+                    rel = compute_lift(dataset[0], nn_lift, model, cfg.task, [cfg.class_label], cfg.rel_class, cfg.rel_rule, cfg.batch_size, '{}_{}_{:04d}_{}_relevance.csv'.format(out_file, fold+1, cp, dataset[1]))
 
-            print('# Relevance')
-            print(rel)
+                if cfg.agglutinate:
+                    rel = agglutinate(rel)
 
-            print('# Ranking')
-            print(ranking)
-            ranks_values.append(ranking.index.values)
-            ranks_labels.append('{}_{}'.format(fold+1, dataset[1]))
+                for cl in sort_class:
+                    if cl in list(rel.index):
+                        rel.rename(index={cl:'{}_'.format(cl)},inplace=True)
+                        dataset[0].rename(index={cl:'{}_'.format(cl)},inplace=True)
+                        dataset[2].rename(index={cl:'{}_'.format(cl)},inplace=True)
+                        print('\nWARNING: index {} was changed to {}_ due to name collision with a class label.\n'.format(cl, cl))
 
-            if cfg.kendall_tau:
-                rank_dist(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{}_rank_dist.csv'.format(out_fold+'relevance_eval/', fold+1, dataset[1]))
-            rank_venn(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{}_rank_venn.csv'.format(out_fold+'relevance_eval/', fold+1, dataset[1]))
-            print(out)
-            (print('out out'))
-            heatsheets(rel, ranking, out, sort_class, cfg.class_label, dataset[1], cfg.agglutinate, '{}_{}_{}_relsheet.csv'.format(out_file, fold+1, dataset[1]))
-            heatsheets(dataset[2], ranking, out, sort_class, cfg.class_label, dataset[1], cfg.agglutinate, '{}_{}_{}_datasheet.csv'.format(out_file, fold+1, dataset[1]))
+                compute_rel_stats(rel, '{}_{}_{:04d}_{}_rel_stats.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
+                
+                if cfg.task == 'classification':
+                    ranking = rank(rel, dataset[0][cfg.class_label], cfg.rank, cfg.mean_type, sort_class, '{}{}_{:04d}_{}_rank.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
+                elif cfg.task == 'regression':
+                    tc = target_classes.loc[rel.index]
+                    ranking = rank(rel, tc[0], cfg.rank, cfg.mean_type, sort_class, '{}{}_{:04d}_{}_rank.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
+
+                print('# Relevance')
+                print(rel)
+
+                print('# Ranking')
+                print(ranking)
+                ranks_values.append(ranking.index.values)
+                ranks_labels.append('{}_{}'.format(fold+1, dataset[1]))
+
+                if cfg.kendall_tau:
+                    rank_dist(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{:04d}_{}_rank_dist.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
+                rank_venn(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{:04d}_{}_rank_venn.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
+                print(out)
+                (print('out out'))
+                heatsheets(rel, ranking, out, sort_class, cfg.class_label, dataset[1], cfg.agglutinate, '{}_{}_{:04d}_{}_relsheet.csv'.format(out_file, fold+1, cp, dataset[1]))
+                heatsheets(dataset[2], ranking, out, sort_class, cfg.class_label, dataset[1], cfg.agglutinate, '{}_{}_{:04d}_{}_datasheet.csv'.format(out_file, fold+1, cp, dataset[1]))
 
     if cfg.kendall_tau:
         tau_df = RR_utils.kendall_tau(ranks_values, ranks_labels, cfg.n_selection)

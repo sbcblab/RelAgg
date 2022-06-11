@@ -15,6 +15,7 @@ batch_size          = 4     # batch size for training the neural networks
 weights_constraints = True  # True if neural network biases should be <= 0.0 and if weights and biases in the output layer must be >= 0.0 
 k                   = 3     # number of folds for stratified k-fold cross-validation, if k <= 1 there is no partition and will use all samples
 cv_splits           = None  # if None, the folds of stratified k-fold cross-validation will be divided randomly, if file path to split.py it will use split in the file
+checkpoint          = 150   # periodicity to save the models, if it should not be used set to be equal to train_epochs. If equals to 0 or 1 will save all epochs.
 n_selection         = 2     # number of top ranked input features to be considered for further analyses
 
 regularizer         = 'l1'  # weights regularizer: 'l1', 'l2', or None

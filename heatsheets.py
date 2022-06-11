@@ -120,8 +120,8 @@ if __name__ == '__main__':
         for use in usage:
             print('\n###### {}-FOLD: {}\n'.format(fold+1, use))
 
-            data_file = '{}_{}_{}_datasheet.csv'.format(out_file, fold+1, use)
-            rele_file = '{}_{}_{}_relsheet.csv'.format(out_file, fold+1, use)
+            data_file = '{}_{}_{:04d}_{}_datasheet.csv'.format(out_file, fold+1, cfg.train_epochs, use)
+            rele_file = '{}_{}_{:04d}_{}_relsheet.csv'.format(out_file, fold+1, cfg.train_epochs, use)
 
             dat = pd.read_csv(data_file, header=0, index_col=0, low_memory=False)
             rel = pd.read_csv(rele_file, header=0, index_col=0, low_memory=False)
@@ -291,12 +291,12 @@ if __name__ == '__main__':
 
             print('\nTop {} features by class:\n'.format(cfg.n_selection))
             print(df_selection)
-            df_selection.to_csv('{}{}_{}_selection.csv'.format(out_fold+'relevance_eval/', fold+1, use))
+            df_selection.to_csv('{}{}_{:04d}_{}_selection.csv'.format(out_fold+'relevance_eval/', fold+1, cfg.train_epochs, use))
 
             class_venn = RR_utils.venn([list(df_selection[cl].values) for cl in [SCORE_LABEL]+CLASS_LABELS], [SCORE_LABEL]+CLASS_LABELS, cfg.n_selection)
             print('\nSet difference between classes (top {} features):\n'.format(cfg.n_selection))
             print(class_venn)
-            class_venn.to_csv('{}{}_{}_class_venn.csv'.format(out_fold+'relevance_eval/', fold+1, use))
+            class_venn.to_csv('{}{}_{:04d}_{}_class_venn.csv'.format(out_fold+'relevance_eval/', fold+1, cfg.train_epochs, use))
 
             cat_all_ids = []
             if cfg.agglutinate:
@@ -317,6 +317,6 @@ if __name__ == '__main__':
                 c_sel = [cfg.class_label]+cat_all_ids
                 correlation = df[c_sel].corr(method ='pearson')
             print('\nCorrelation: \n{}'.format(correlation))
-            correlation.to_csv('{}{}_{}_corr.csv'.format(out_fold+'relevance_eval/', fold+1, use))
+            correlation.to_csv('{}{}_{:04d}_{}_corr.csv'.format(out_fold+'relevance_eval/', fold+1, cfg.train_epochs, use))
 
         wb.save(data_file.replace('.csv', '.xlsx'))

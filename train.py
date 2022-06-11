@@ -14,6 +14,7 @@ from sklearn.utils import class_weight
 import tensorflow
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Dense, Activation, Dropout
 from tensorflow.keras.constraints import Constraint
 from tensorflow.keras.constraints import max_norm
@@ -22,6 +23,7 @@ from tensorflow.keras.utils import plot_model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l1
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 import RR_utils
 
@@ -45,6 +47,7 @@ if __name__ == '__main__':
     if cfg.task == 'regression':
         C = 1
         df[cfg.class_label] = RR_utils.shift_target(df, cfg.class_label)
+        df[cfg.class_label] = df[cfg.class_label]/df[cfg.class_label].max()
     elif cfg.task == 'classification':
         C =  df[cfg.class_label].nunique()
     else:
@@ -66,6 +69,10 @@ if __name__ == '__main__':
         raise Exception('Batch size ({}) is larger than the number of samples ({})!'.format(cfg.batch_size, N))
     elif cfg.batch_size == N:
         print('\nWARNING: batch size ({}) is equal to the number of samples ({})!\n'.format(cfg.batch_size, N))
+
+    cp_list = list(range(cfg.checkpoint, cfg.train_epochs+1, cfg.checkpoint))
+    if cp_list[-1] != cfg.train_epochs:
+        cp_list.append(cfg.train_epochs)
 
     ###################################################################################
 
@@ -156,22 +163,23 @@ if __name__ == '__main__':
 
         #optimizer = 'adam'
         optimizer = 'SGD'
-
+        checkpoint = ModelCheckpoint("{}_{}_".format(out_file, fold+1)+"{epoch:04d}.hdf5", monitor='loss', verbose=1, save_best_only=False, mode='auto', period=cfg.checkpoint)
         if cfg.task == 'classification':
             # Compile model
             model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'], weighted_metrics=['accuracy'])
             # Fit the model
-            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, class_weight=class_weights_index, verbose=2)
+            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, class_weight=class_weights_index, verbose=2, callbacks=[checkpoint])
         elif cfg.task == 'regression':
             # Compile model
             model.compile(loss='mean_squared_error', optimizer=optimizer)
             # Fit the model
-            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, verbose=2)
+            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, verbose=2, callbacks=[checkpoint])
 
         #save the network
-        model.save("{}_{}.hdf5".format(out_file, fold+1), include_optimizer = False)
+        model.save("{}_{}_{:04d}.hdf5".format(out_file, fold+1, cfg.train_epochs), include_optimizer = False)
         plot_model(model, show_shapes=True, show_layer_names=True, to_file="{}{}/{}.png".format(out_fold, 'network_eval', fold+1))
 
+        
         # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
         # https://stackoverflow.com/questions/43162506/undefinedmetricwarning-f-score-is-ill-defined-and-being-set-to-0-0-in-labels-wi
         y_pred1 = model.predict(X)
@@ -219,7 +227,10 @@ if __name__ == '__main__':
             RR_utils.regression_distance(tr_df, cfg.class_label, model, out_fold+"network_eval/{}_TR_regdist.csv".format(fold+1))
             if teX is not None:
                 RR_utils.regression_distance(te_df, cfg.class_label, model, out_fold+"network_eval/{}_TE_regdist.csv".format(fold+1))
-        RR_utils.save_outputs(df, splits[fold], cfg.task, cfg.class_label, model, out_file+"_{}_out.csv".format(fold+1), rescale=cfg.rescaled, standard=cfg.standardized, minVals=min_vals, maxVals=max_vals, meanVals=mean_vals, stdVals=std_vals)
+   
+        for cp in cp_list: 
+            model_cp = load_model('{}_{}_{:04d}.hdf5'.format(out_file, fold+1, cp), custom_objects={'NonPos': RR_utils.NonPos, 'IsZero': RR_utils.IsZero}, compile=False)        
+            RR_utils.save_outputs(df, splits[fold], cfg.task, cfg.class_label, model_cp, out_file+"_{}_{:04d}_out.csv".format(fold+1, cp), rescale=cfg.rescaled, standard=cfg.standardized, minVals=min_vals, maxVals=max_vals, meanVals=mean_vals, stdVals=std_vals)
  
     ###################################################################################
     
