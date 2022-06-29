@@ -5,7 +5,7 @@ dataset_file   = "DATA/XOR/xor_2in50_500.csv" # path to data file (must be .csv,
 task           = "classification" # "classification" or "regression"
 class_label    = "y"              # label of the column with the classes or target values
 dataset_sep    = ","              # use ',' to separate columns in the dataset
-output_folder  = 'RESULTS/movie'        # name of directory in which the results will be saved
+output_folder  = 'RESULTS/DMDK'        # name of directory in which the results will be saved
 row_index      = 0                # The column that has the row index, None if no index
 
 standardized        = False # True if data should be normalized with the z-norm (M=0.0, std=1.0)
@@ -15,7 +15,7 @@ batch_size          = 16     # batch size for training the neural networks
 weights_constraints = True  # True if neural network biases should be <= 0.0 and if weights and biases in the output layer must be >= 0.0 
 k                   = 1     # number of folds for stratified k-fold cross-validation, if k <= 1 there is no partition and will use all samples
 cv_splits           = None  # if None, the folds of stratified k-fold cross-validation will be divided randomly, if file path to split.py it will use split in the file
-checkpoint          = 1   # periodicity to save the models, if it should not be used set to be equal to train_epochs. If equals to 0 or 1 will save all epochs.
+checkpoint          = 15   # periodicity to save the models, if it should not be used set to be equal to train_epochs. If equals to 0 or 1 will save all epochs.
 n_selection         = 2     # number of top ranked input features to be considered for further analyses
 
 regularizer         = 'l1'  # weights regularizer: 'l1', 'l2', or None

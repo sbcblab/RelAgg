@@ -24,6 +24,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l1
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import CSVLogger
 
 import RR_utils
 
@@ -164,16 +165,17 @@ if __name__ == '__main__':
         #optimizer = 'adam'
         optimizer = 'SGD'
         checkpoint = ModelCheckpoint("{}_{}_".format(out_file, fold+1)+"{epoch:04d}.hdf5", monitor='loss', verbose=1, save_best_only=False, mode='auto', period=cfg.checkpoint)
+        csv_logger = CSVLogger(out_fold + 'network_eval/{}_log.csv'.format(fold+1), append=True, separator=',')
         if cfg.task == 'classification':
             # Compile model
             model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'], weighted_metrics=['accuracy'])
             # Fit the model
-            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, class_weight=class_weights_index, verbose=2, callbacks=[checkpoint])
+            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, class_weight=class_weights_index, verbose=2, callbacks=[checkpoint, csv_logger])
         elif cfg.task == 'regression':
             # Compile model
             model.compile(loss='mean_squared_error', optimizer=optimizer)
             # Fit the model
-            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, verbose=2, callbacks=[checkpoint])
+            model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, verbose=2, callbacks=[checkpoint, csv_logger])
 
         #save the network
         model.save("{}_{}_{:04d}.hdf5".format(out_file, fold+1, cfg.train_epochs), include_optimizer = False)

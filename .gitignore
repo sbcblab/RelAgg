@@ -8,3 +8,4 @@ experiments
 RESULTS
 *config.py
 tsnes
+*.ipynb*
