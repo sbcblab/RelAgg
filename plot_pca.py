@@ -110,7 +110,8 @@ def plot(df, features=None, norm=True, rescale=False, class_label='y', colors=li
             indicesToKeep = finalDf[class_label] == target
             ax.scatter(finalDf.loc[indicesToKeep, xlab]
                        , finalDf.loc[indicesToKeep, ylab]
-                       , c = colhex[colors[t%len(colors)]]
+                       #, c = colhex[colors[t%len(colors)]]   # colors=[colhex.get(c, c) for c in cfg.class_colors]
+                       , c = colhex.get(colors[t%len(colors)], colors[t%len(colors)])
                        , marker = markers[t%len(markers)]
                        , s = marker_size)
             t = t+1

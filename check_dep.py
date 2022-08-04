@@ -51,6 +51,11 @@ try:
         import cupy as np
 except:
     print('Could not import cupy')
+    
+try:
+    from tqdm import tqdm
+except:
+    print('Could not import tqdm')
 
 ########################################
 

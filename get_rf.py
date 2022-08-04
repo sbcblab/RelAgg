@@ -10,6 +10,7 @@ import importlib
 import importlib.util
 from collections import namedtuple
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 from sklearn.ensemble import RandomForestRegressor
 
 import model_io
@@ -41,7 +42,8 @@ if __name__ == '__main__':
     if not os.path.exists(out_fold+'rf_eval/'):
         os.makedirs(out_fold+'rf_eval/')
 
-    df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index)
+    df = pd.concat([chunk for chunk in tqdm(pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index, chunksize=cfg.load_chunksize), desc='Loading data from {} in chunks of {}'.format(cfg.dataset_file, cfg.load_chunksize))]) 
+    df = RR_utils.set_dataframe_dtype(df, cfg.dtype_float, cfg.dtype_int)
     df = RR_utils.check_dataframe(df, cfg.class_label, cfg.task)
 
     sort_class = []
@@ -60,8 +62,6 @@ if __name__ == '__main__':
     #for fold in range(len(splits)):
     for fold in range(1):
         print('\n###### {}-FOLD:\n'.format(fold+1))
-        #out = pd.read_csv('{}_{}_out.csv'.format(out_file, fold+1), delimiter=',', header=0, index_col=0)
-        #load a neural network
 
         tr_df, te_df, mean_vals, std_vals, min_vals, max_vals = RR_utils.split_data(df, splits[fold], cfg.class_label, cfg.standardized, cfg.rescaled) 
         tr_df2, te_df2, mean_vals2, std_vals2, min_vals2, max_vals2 = RR_utils.split_data(df, splits[fold], cfg.class_label, False, False) 
@@ -78,13 +78,20 @@ if __name__ == '__main__':
 
             clf = RandomForestRegressor(max_depth=10, random_state=42)
             clf.fit(X, Y)
+            pred = clf.predict(X)
+            print(pred)
+            del X
+            del Y
             print(clf.feature_importances_)
             print(clf.feature_importances_.shape)
             new_labels = list(dataset[0].columns)
             new_labels.remove(cfg.class_label)
             cdf = pd.DataFrame(data=clf.feature_importances_, index=new_labels, columns=['value'])
+            del clf
             print(cdf)
             class_col = 'score'
             cdf.to_csv(cfg.output_folder + '/' + os.path.basename(cfg.dataset_file).replace('.csv','/') + 'RF_' + class_col + '_' + os.path.basename(cfg.dataset_file))
-
+            del new_labels
+            del cdf
+    del df
             

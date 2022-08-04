@@ -7,6 +7,8 @@ import importlib
 from collections import namedtuple
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
+from matplotlib.colors import is_color_like
 
 from sklearn import metrics
 from sklearn.utils import class_weight
@@ -36,13 +38,15 @@ tensorflow.compat.v1.enable_eager_execution()
 ####################################################################################       
 
 if __name__ == '__main__': 
+    
     print(tensorflow.__version__)
     out_fold, out_file = RR_utils.create_output_dir(cfg.dataset_file, cfg.output_folder)
 
     if not os.path.exists(out_fold+'network_eval/'):
         os.makedirs(out_fold+'network_eval/')
 
-    df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index)
+    df = pd.concat([chunk for chunk in tqdm(pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index, chunksize=cfg.load_chunksize), desc='Loading data from {} in chunks of {}'.format(cfg.dataset_file, cfg.load_chunksize))])   
+    df = RR_utils.set_dataframe_dtype(df, cfg.dtype_float, cfg.dtype_int)
     df = RR_utils.check_dataframe(df, cfg.class_label, cfg.task)
 
     if cfg.task == 'regression':
@@ -98,24 +102,6 @@ if __name__ == '__main__':
         print('###### CROSS-VALIDATION {}-FOLD:'.format(fold+1))
 
         tr_df, te_df, mean_vals, std_vals, min_vals, max_vals = RR_utils.split_data(df, splits[fold], cfg.class_label, cfg.standardized, cfg.rescaled) 
-        X, Y = RR_utils.get_XY(tr_df, cfg.task, cfg.class_label)
-        teX, teY = RR_utils.get_XY(te_df, cfg.task, cfg.class_label)
-
-        if cfg.batch_size > len(X):
-            raise Exception('Batch size ({}) is larger than the number of samples of training set ({}) in fold {}!'.format(cfg.batch_size, len(X), fold+1))
-        elif cfg.batch_size == len(X):
-            print('\nWARNING: Batch size ({}) is equal to the number of samples of training set ({}) in fold {}!\n'.format(cfg.batch_size, len(X), fold+1))
-
-        if teX is not None:
-            if cfg.batch_size > len(teX):
-                raise Exception('Batch size ({}) is larger than the number of samples of test set ({}) in fold {}!'.format(cfg.batch_size, len(teX), fold+1))
-            elif cfg.batch_size == len(teX):
-                print('\nWARNING: Batch size ({}) is equal to the number of samples of test set ({}) in fold {}!\n'.format(cfg.batch_size, len(teX), fold+1))
-
-        if cfg.task == 'classification':
-            class_weights_index = RR_utils.get_class_weights(np.sort(df[cfg.class_label].unique()), tr_df[cfg.class_label].values, index_type='index')
-            print('\nClass weights:\n', class_weights_index, '\n')
-
 
         regularization = cfg.regularization
         
@@ -162,30 +148,47 @@ if __name__ == '__main__':
             model.add(Dense(C, activation=actfun, kernel_constraint=non_neg(), kernel_regularizer=l_reg(regularization), bias_regularizer=l_reg(regularization), bias_constraint=non_neg()))
             #model.add(Dense(C, activation=actfun))
 
-        #optimizer = 'adam'
-        optimizer = 'SGD'
         checkpoint = ModelCheckpoint("{}_{}_".format(out_file, fold+1)+"{epoch:04d}.hdf5", monitor='loss', verbose=1, save_best_only=False, mode='auto', period=cfg.checkpoint)
         csv_logger = CSVLogger(out_fold + 'network_eval/{}_log.csv'.format(fold+1), append=True, separator=',')
+        
+        X, Y = RR_utils.get_XY(tr_df, cfg.task, cfg.class_label)
+        teX, teY = RR_utils.get_XY(te_df, cfg.task, cfg.class_label)
+        if cfg.batch_size > len(X):
+            raise Exception('Batch size ({}) is larger than the number of samples of training set ({}) in fold {}!'.format(cfg.batch_size, len(X), fold+1))
+        elif cfg.batch_size == len(X):
+            print('\nWARNING: Batch size ({}) is equal to the number of samples of training set ({}) in fold {}!\n'.format(cfg.batch_size, len(X), fold+1))
+        if teX is not None:
+            if cfg.batch_size > len(teX):
+                raise Exception('Batch size ({}) is larger than the number of samples of test set ({}) in fold {}!'.format(cfg.batch_size, len(teX), fold+1))
+            elif cfg.batch_size == len(teX):
+                print('\nWARNING: Batch size ({}) is equal to the number of samples of test set ({}) in fold {}!\n'.format(cfg.batch_size, len(teX), fold+1))
+           
         if cfg.task == 'classification':
+            class_weights_index = RR_utils.get_class_weights(np.sort(df[cfg.class_label].unique()), tr_df[cfg.class_label].values, index_type='index')
+            print('\nClass weights:\n', class_weights_index, '\n')            
             # Compile model
-            model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'], weighted_metrics=['accuracy'])
+            model.compile(loss='categorical_crossentropy', optimizer=cfg.optimizer, metrics=['accuracy'], weighted_metrics=['accuracy'])
             # Fit the model
             model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, class_weight=class_weights_index, verbose=2, callbacks=[checkpoint, csv_logger])
+            del class_weights_index
         elif cfg.task == 'regression':
             # Compile model
-            model.compile(loss='mean_squared_error', optimizer=optimizer)
+            model.compile(loss='mean_squared_error', optimizer=cfg.optimizer)
             # Fit the model
             model.fit(X, Y, epochs=cfg.train_epochs, batch_size=cfg.batch_size, shuffle=True, verbose=2, callbacks=[checkpoint, csv_logger])
 
         #save the network
+        print('Saving {}'.format("{}_{}_{:04d}.hdf5".format(out_file, fold+1, cfg.train_epochs)))
         model.save("{}_{}_{:04d}.hdf5".format(out_file, fold+1, cfg.train_epochs), include_optimizer = False)
         plot_model(model, show_shapes=True, show_layer_names=True, to_file="{}{}/{}.png".format(out_fold, 'network_eval', fold+1))
-
-        
+  
         # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
         # https://stackoverflow.com/questions/43162506/undefinedmetricwarning-f-score-is-ill-defined-and-being-set-to-0-0-in-labels-wi
+        print('Predict...')
         y_pred1 = model.predict(X)
 
+        del X
+        
         if cfg.task == 'classification':
             y_pred  = np.argmax(y_pred1, axis=1)
             y       = np.argmax(Y, axis=1)
@@ -202,6 +205,8 @@ if __name__ == '__main__':
             tr_accuracy.append(metrics.mean_squared_error(Y, y_pred1))
             print('\nTraining MSE: {}'.format(tr_accuracy[-1]))
 
+        del Y
+            
         if teX is not None:
             tey_pred1 = model.predict(teX)
             if cfg.task == 'classification':
@@ -230,12 +235,31 @@ if __name__ == '__main__':
             if teX is not None:
                 RR_utils.regression_distance(te_df, cfg.class_label, model, out_fold+"network_eval/{}_TE_regdist.csv".format(fold+1))
    
+        K.clear_session()
+
+        del tr_df
+        del te_df
+        del teX
+        del teY
+        del model
+
         for cp in cp_list: 
-            model_cp = load_model('{}_{}_{:04d}.hdf5'.format(out_file, fold+1, cp), custom_objects={'NonPos': RR_utils.NonPos, 'IsZero': RR_utils.IsZero}, compile=False)        
+            print('Loading {}'.format('{}_{}_{:04d}.hdf5'.format(out_file, fold+1, cp)))
+            model_cp = load_model('{}_{}_{:04d}.hdf5'.format(out_file, fold+1, cp), custom_objects={'NonPos': RR_utils.NonPos, 'IsZero': RR_utils.IsZero}, compile=False)
             RR_utils.save_outputs(df, splits[fold], cfg.task, cfg.class_label, model_cp, out_file+"_{}_{:04d}_out.csv".format(fold+1, cp), rescale=cfg.rescaled, standard=cfg.standardized, minVals=min_vals, maxVals=max_vals, meanVals=mean_vals, stdVals=std_vals)
+            K.clear_session()
+            del model_cp
  
+        del min_vals
+        del max_vals
+        del mean_vals
+        del std_vals
+
     ###################################################################################
     
+    del df
+    del splits
+    del cp_list
     if cfg.task == 'classification':
         if cfg.eval_metric == 'accuracy':
             RR_utils.save_accuracy(tr_accuracy, te_accuracy, cfg.k, out_fold +'network_eval/acc.txt')
@@ -245,3 +269,5 @@ if __name__ == '__main__':
             raise Exception('Unknown evaluation metric: {}'.format(cfg.eval_metric))
     elif cfg.task == 'regression':
         RR_utils.save_accuracy(tr_accuracy, te_accuracy, cfg.k, out_fold +'network_eval/mse.txt')
+    del tr_accuracy
+    del te_accuracy

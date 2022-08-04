@@ -10,6 +10,7 @@ import importlib
 import importlib.util
 from collections import namedtuple
 from tensorflow.keras.models import load_model
+from tqdm import tqdm
 
 import model_io
 import RR_utils
@@ -91,7 +92,10 @@ def compute_lift(df, nn_lift, model, task_type, class_label, rel_class, rule_par
             raise Exception('Wrong value for the relevance class: {}'.format(rel_class))
         lift = []
         print(partition)
+        complete_i = 0
         for x, ref in zip(np.array_split(X, partition), np.array_split(reference, partition)):
+            print('Computing relevance: {:.2f}%'.format(complete_i/float(len(Y))*100), end='\r')
+            complete_i += partition            
             if x.size != 0:
                 lift.append(np.array(deeplift_contribs_func(task_idx=task,
                                                             input_data_list=[x],
@@ -110,7 +114,13 @@ def compute_lift(df, nn_lift, model, task_type, class_label, rel_class, rule_par
         list_wo_y.remove(cl)
     relevance = pd.DataFrame(lift, index=list(df.index.values), columns=list_wo_y)
     if file_name:
-        relevance.to_csv(file_name)   
+        print('Writing ' + file_name)
+        RR_utils.write_large_csv(relevance, file_name)
+        #relevance.to_csv(file_name)   
+    
+    del X
+    del Y
+    del list_wo_y
     return relevance
 
 def compute_relevance(df, nn, task, class_label, rel_class, lrp_param, file_name):
@@ -137,7 +147,10 @@ def compute_relevance(df, nn, task, class_label, rel_class, lrp_param, file_name
     X, Y = RR_utils.get_XY(df, task, class_label)
     R = []
     partition = 100
+    complete_i = 0
     for x, y in zip(np.array_split(X, partition), np.array_split(Y, partition)):
+        print('Computing relevance: {:.2f}%'.format(complete_i/float(len(Y))*100), end='\r')
+        complete_i += partition
         if x.size != 0:
             ypred = nn.forward(x) + 0.0001 # sum small error factor to network output because initial relevance must be > 0
             if rel_class == 'true':
@@ -154,6 +167,8 @@ def compute_relevance(df, nn, task, class_label, rel_class, lrp_param, file_name
             else:
                 raise Exception('Wrong value for the relevance class.')
             R.append(nn.lrp(Rinit))
+            del Rinit
+            del ypred
 
     R = np.concatenate(R,axis=0)
     print(X.shape, R.shape)
@@ -162,8 +177,16 @@ def compute_relevance(df, nn, task, class_label, rel_class, lrp_param, file_name
     for cl in class_label:
         list_wo_y.remove(cl)
     relevance = pd.DataFrame(R, index=list(df.index.values), columns=list_wo_y)
+    
+    del R
+    del X
+    del Y
+    del list_wo_y
+    
     if file_name:
-        relevance.to_csv(file_name)
+        print('Writing ' + file_name)
+        RR_utils.write_large_csv(relevance, file_name)
+        # relevance.to_csv(file_name)
     return relevance
 
 def compute_rel_stats(df, file_name):
@@ -183,7 +206,10 @@ def compute_rel_stats(df, file_name):
     stats['abs_max']    = abs_df.max(axis=0)
     print('# Stats')
     print(stats)
+    print('Writing ' + file_name)
     stats.to_csv(file_name)
+    del stats
+    del abs_df
 
 def agglutinate(df):
     cols = df.columns.values
@@ -201,6 +227,9 @@ def agglutinate(df):
         df = df.drop(names[name], axis=1)
         df[name] = sum_name
 
+    del cols
+    del agg_cols
+    del names
     return df
 
 def rank(rel, y, rank_metric, mean_type, class_labels, file_name):
@@ -229,6 +258,7 @@ def rank(rel, y, rank_metric, mean_type, class_labels, file_name):
             rwot = ranking.T
         rwot = rwot.drop(rwot.std()[(rwot.std() == 0)].index, axis=1)
         rankingT[cl] = np.nan_to_num(aver_func(rwot, axis=1), nan=0.0)
+        del rwot
     class_ranks = rankingT[class_labels].values
     rankingT.insert(rankingT.columns.get_loc(class_labels[0]), SCORE_LABEL, aver_func(class_ranks, axis=1), True)
     #rankingT.insert(rankingT.columns.get_loc(class_labels[0]), SCORE_LABEL, (class_ranks.min(axis=1) + class_ranks.max(axis=1))/2.0, True)
@@ -236,10 +266,15 @@ def rank(rel, y, rank_metric, mean_type, class_labels, file_name):
   
     rankingT = rankingT.fillna(0.0)
     if rank_metric == 'rank':
-        rankingT = rankingT.sort_values(SCORE_LABEL)
+        #rankingT = rankingT.sort_values(SCORE_LABEL)
+        rankingT.sort_values(SCORE_LABEL, inplace=True)
     elif rank_metric == 'norm':
-        rankingT = rankingT.sort_values(SCORE_LABEL, ascending=False)
-    rankingT.to_csv(file_name)
+        #rankingT = rankingT.sort_values(SCORE_LABEL, ascending=False)
+        rankingT.sort_values(SCORE_LABEL, ascending=False, inplace=True)
+    print('Writing ' + file_name)
+    RR_utils.write_large_csv(rankingT, file_name)
+    #rankingT.to_csv(file_name)
+    del ranking
     return rankingT
 
 def rank_dist(ranking, y, n_features, list_classes, file_name):
@@ -251,7 +286,9 @@ def rank_dist(ranking, y, n_features, list_classes, file_name):
         rk = ranking.sort_values(cl)
         ranks.append(rk.index.values)
     tau_df = RR_utils.kendall_tau(ranks, labels, n_features)
+    print('Writing ' + file_name)
     tau_df.to_csv(file_name)
+    del tau_df
 
 def rank_venn(ranking, y, n_features, list_classes, file_name):
     labels = []
@@ -262,10 +299,13 @@ def rank_venn(ranking, y, n_features, list_classes, file_name):
         rk = ranking.sort_values(cl)
         ranks.append(rk.index.values)
     venn_df = RR_utils.venn(ranks, labels, n_features)
+    print('Writing ' + file_name)
     venn_df.to_csv(file_name)
+    del venn_df
 
 def heatsheets(data, ranking, out, ys, class_label, use, agg, file_name):
     if agg:
+        print('Agglutinating...')
         rel_index = list(ranking.index)
         dat_index = list(data.columns)
         if class_label in dat_index:
@@ -281,19 +321,36 @@ def heatsheets(data, ranking, out, ys, class_label, use, agg, file_name):
                 mif = mif.str.replace(ri+'.', '')
                 data[ri] = mif
                 data = data.drop(rif, axis=1)
-    dataT  = data.T
-    rank_sum = ranking[ranking.columns[-(1+len(ys)):]].copy()
-    rank_sum = rank_sum.join(dataT.reindex(rank_sum.index))
+                del rif
+                del mif
+        del rel_index
+        del dat_index
+
     print(out)
     out_part = out.loc[out['usage'] == use].copy()
     out_part = out_part.T
     for label in [SCORE_LABEL] + list(ys):
         out_part[label] = None
-    out_part = out_part.sort_values(by=['usage', class_label, 'prediction', 'max_out'], axis=1, ascending=True, na_position='first')
+    print([SCORE_LABEL] + list(ys))
+    print('Sorting...')
+    out_part.sort_values(by=['usage', class_label, 'prediction', 'max_out'], axis=1, ascending=True, na_position='first', inplace=True)
+    print(out_part)
+    
+    rank_sum = ranking[ranking.columns[-(1+len(ys)):]].copy()
+    save_size_limit = 20_000_000 
+    if data.size < save_size_limit:
+        rank_sum = rank_sum.join((data.T).reindex(rank_sum.index))
+    else:
+        print('WARNING: Data has size {} larger than {}, so it was not saved in {}'.format(data.size, save_size_limit, file_name))
     rank_sum = out_part.append(rank_sum, sort=True)
     rank_sum = rank_sum[out_part.columns]
-    rank_sum.to_csv(file_name)
-
+    del out_part
+    print(rank_sum)
+    print('Writing ' + file_name)
+    RR_utils.write_large_csv(rank_sum, file_name)
+    #rank_sum.to_csv(file_name)
+    del rank_sum   
+    
 #################################################################################################3
 
 if __name__ == '__main__':
@@ -306,6 +363,7 @@ if __name__ == '__main__':
     print(spt_file)
     #spt = importlib.import_module(spt_file.replace('/','.').replace('.py',''))
 
+    print('Loading ' + spt_file)
     spec = importlib.util.spec_from_file_location(spt_file.replace('/','.').replace('.py',''), spt_file) 
     spt  = importlib.util.module_from_spec(spec) 
     spec.loader.exec_module(spt) 
@@ -315,7 +373,15 @@ if __name__ == '__main__':
     if not os.path.exists(out_fold+'relevance_eval/'):
         os.makedirs(out_fold+'relevance_eval/')
 
-    df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index)
+    print('Loading ' + cfg.dataset_file)
+    
+    # https://stackoverflow.com/questions/52209290/how-do-i-make-a-progress-bar-for-loading-pandas-dataframe-from-a-large-xlsx-file
+    df = pd.concat([chunk for chunk in tqdm(pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index, chunksize=cfg.load_chunksize), desc='Loading data from {} in chunks of {}'.format(cfg.dataset_file, cfg.load_chunksize))])
+    #data = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index, chunksize=1000)
+    #df = pd.concat(data)
+    #del data
+    
+    df = RR_utils.set_dataframe_dtype(df, cfg.dtype_float, cfg.dtype_int)
     df = RR_utils.check_dataframe(df, cfg.class_label, cfg.task)
 
     sort_class = []
@@ -341,10 +407,16 @@ if __name__ == '__main__':
         
         for cp in cp_list: 
 
-            out = pd.read_csv('{}_{}_{:04d}_out.csv'.format(out_file, fold+1, cp), delimiter=',', header=0, index_col=0)
-
+            print('Loading ' + '{}_{}_{:04d}_out.csv'.format(out_file, fold+1, cp))
+            out = pd.concat([chunk for chunk in tqdm(pd.read_csv('{}_{}_{:04d}_out.csv'.format(out_file, fold+1, cp), delimiter=',', header=0, index_col=0, chunksize=cfg.load_chunksize), desc='Loading data from {} in chunks of {}'.format(cfg.dataset_file, cfg.load_chunksize))])
+            #data_out = pd.read_csv('{}_{}_{:04d}_out.csv'.format(out_file, fold+1, cp), delimiter=',', header=0, index_col=0, chunksize=1000)
+            #out = pd.concat(data_out)
+            #del data_out
+            out = out.astype({c: cfg.dtype_float for c in out.select_dtypes(include='float64').columns})
+            
             #load a neural network
             print('# Reading neural network {:04d}'.format(cp))
+            print('Loading ' + '{}_{}_{:04d}.hdf5'.format(out_file, fold+1, cp))
             model = load_model('{}_{}_{:04d}.hdf5'.format(out_file, fold+1, cp), custom_objects={'NonPos': RR_utils.NonPos, 'IsZero': RR_utils.IsZero}, compile=False)
             if cfg.rel_rule[0] == 'deeplift':
                 nn_lift =\
@@ -359,6 +431,25 @@ if __name__ == '__main__':
 
             tr_df, te_df, mean_vals, std_vals, min_vals, max_vals = RR_utils.split_data(df, splits[fold], cfg.class_label, cfg.standardized, cfg.rescaled) 
             tr_df2, te_df2, mean_vals2, std_vals2, min_vals2, max_vals2 = RR_utils.split_data(df, splits[fold], cfg.class_label, False, False) 
+            
+            tr_df = tr_df.astype({c: cfg.dtype_float for c in tr_df.select_dtypes(include='float64').columns})
+            te_df = te_df.astype({c: cfg.dtype_float for c in te_df.select_dtypes(include='float64').columns})
+            tr_df2 = tr_df2.astype({c: cfg.dtype_float for c in tr_df2.select_dtypes(include='float64').columns})
+            te_df2 = te_df2.astype({c: cfg.dtype_float for c in te_df2.select_dtypes(include='float64').columns})
+            
+            tr_df = tr_df.astype({c: cfg.dtype_int for c in tr_df.select_dtypes(include='int64').columns})
+            te_df = te_df.astype({c: cfg.dtype_int for c in te_df.select_dtypes(include='int64').columns})
+            tr_df2 = tr_df2.astype({c: cfg.dtype_int for c in tr_df2.select_dtypes(include='int64').columns})
+            te_df2 = te_df2.astype({c: cfg.dtype_int for c in te_df2.select_dtypes(include='int64').columns})            
+            
+            del mean_vals
+            del std_vals
+            del min_vals
+            del max_vals
+            del mean_vals2
+            del std_vals2
+            del min_vals2
+            del max_vals2
 
             if te_df.empty:
                 l = [(tr_df, 'train', tr_df2)]
@@ -367,12 +458,16 @@ if __name__ == '__main__':
             for dataset in l:
                 print('### {}:'.format(dataset[1]))
 
+                print('Computing relevance...')
                 if cfg.rel_rule[0] != 'deeplift':
                     rel = compute_relevance(dataset[0], nn, cfg.task, [cfg.class_label], cfg.rel_class, cfg.rel_rule, '{}_{}_{:04d}_{}_relevance.csv'.format(out_file, fold+1, cp, dataset[1]))
                 else:
                     rel = compute_lift(dataset[0], nn_lift, model, cfg.task, [cfg.class_label], cfg.rel_class, cfg.rel_rule, cfg.batch_size, '{}_{}_{:04d}_{}_relevance.csv'.format(out_file, fold+1, cp, dataset[1]))
 
+                rel = rel.astype({c: cfg.dtype_float for c in rel.select_dtypes(include='float64').columns})    
+                    
                 if cfg.agglutinate:
+                    print('Agglutinating...')
                     rel = agglutinate(rel)
 
                 for cl in sort_class:
@@ -382,14 +477,17 @@ if __name__ == '__main__':
                         dataset[2].rename(index={cl:'{}_'.format(cl)},inplace=True)
                         print('\nWARNING: index {} was changed to {}_ due to name collision with a class label.\n'.format(cl, cl))
 
+                print('Computing relevance stats...')
                 compute_rel_stats(rel, '{}_{}_{:04d}_{}_rel_stats.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
                 
+                print('Computing ranking...')
                 if cfg.task == 'classification':
                     ranking = rank(rel, dataset[0][cfg.class_label], cfg.rank, cfg.mean_type, sort_class, '{}{}_{:04d}_{}_rank.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
                 elif cfg.task == 'regression':
                     tc = target_classes.loc[rel.index]
                     ranking = rank(rel, tc[0], cfg.rank, cfg.mean_type, sort_class, '{}{}_{:04d}_{}_rank.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
-
+                ranking = ranking.astype({c: cfg.dtype_float for c in ranking.select_dtypes(include='float64').columns})
+                    
                 print('# Relevance')
                 print(rel)
 
@@ -399,18 +497,45 @@ if __name__ == '__main__':
                 ranks_labels.append('{}_{}'.format(fold+1, dataset[1]))
 
                 if cfg.kendall_tau:
+                    print('Computing kendall tau...')
                     rank_dist(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{:04d}_{}_rank_dist.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
-                rank_venn(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{:04d}_{}_rank_venn.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
+                if cfg.venn:
+                    print('Computing venn diagram...')
+                    rank_venn(ranking, dataset[0][cfg.class_label], cfg.n_selection, sort_class, '{}{}_{:04d}_{}_rank_venn.csv'.format(out_fold+'relevance_eval/', fold+1, cp, dataset[1]))
                 print(out)
-                (print('out out'))
+                print('Computing relevance heatmap...')
                 heatsheets(rel, ranking, out, sort_class, cfg.class_label, dataset[1], cfg.agglutinate, '{}_{}_{:04d}_{}_relsheet.csv'.format(out_file, fold+1, cp, dataset[1]))
+                del rel
+                print('Computing data heatmap...')
                 heatsheets(dataset[2], ranking, out, sort_class, cfg.class_label, dataset[1], cfg.agglutinate, '{}_{}_{:04d}_{}_datasheet.csv'.format(out_file, fold+1, cp, dataset[1]))
-
+                del ranking 
+            
+            del tr_df
+            del te_df
+            del tr_df2
+            del te_df2
+            del l            
+            del out
+            del model
+            if cfg.rel_rule[0] == 'deeplift':
+                del nn_lift
+            else:
+                del nn 
+    
+    del df
+    
     if cfg.kendall_tau:
+        print('Computing kendall tau...')
         tau_df = RR_utils.kendall_tau(ranks_values, ranks_labels, cfg.n_selection)
         print(tau_df)
+        print('Writing ' + '{}cv_dist.csv'.format(out_fold+'relevance_eval/'))
         tau_df.to_csv('{}cv_dist.csv'.format(out_fold+'relevance_eval/'))
+        del tau_df
 
-    venn_df = RR_utils.venn(ranks_values, ranks_labels, cfg.n_selection)
-    print(venn_df)
-    venn_df.to_csv('{}cv_venn.csv'.format(out_fold+'relevance_eval/'))    
+    if cfg.venn:
+        print('Computing venn diagram...')
+        venn_df = RR_utils.venn(ranks_values, ranks_labels, cfg.n_selection)
+        print(venn_df)
+        print('Writing ' + '{}cv_venn.csv'.format(out_fold+'relevance_eval/'))
+        venn_df.to_csv('{}cv_venn.csv'.format(out_fold+'relevance_eval/'))    
+        del venn_df

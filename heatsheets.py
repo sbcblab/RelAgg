@@ -12,6 +12,7 @@ from openpyxl import Workbook
 from openpyxl.styles import PatternFill
 from openpyxl.styles import Font, Color
 from openpyxl.styles import Alignment
+from tqdm import tqdm
 
 try: 
     from openpyxl.utils import get_column_letter
@@ -44,7 +45,7 @@ if cfg.class_colors is None:
 else:
     CLASS_COLORS = []
     for c in cfg.class_colors:
-        CLASS_COLORS.append(PatternFill(fgColor=colhex[c], fill_type = 'solid'))
+        CLASS_COLORS.append(PatternFill(fgColor=colhex.get(c,c), fill_type = 'solid'))
 
 USES_COLORS  = [PatternFill(fgColor=colhex['BLACK'], fill_type = 'solid'), PatternFill(fgColor=colhex['SILVER'], fill_type = 'solid')]
 TRAINTEST = ['train', 'test']
@@ -93,7 +94,8 @@ if __name__ == '__main__':
     out_fold, out_file = RR_utils.create_output_dir(cfg.dataset_file, cfg.output_folder)
     if not os.path.exists(out_fold+'relevance_eval/'):
         os.makedirs(out_fold+'relevance_eval/')
-    df = pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index)
+    df = pd.concat([chunk for chunk in tqdm(pd.read_csv(cfg.dataset_file, delimiter=cfg.dataset_sep, header=0, index_col=cfg.row_index, chunksize=cfg.load_chunksize), desc='Loading data from {} in chunks of {}'.format(cfg.dataset_file, cfg.load_chunksize))])   
+    df = RR_utils.set_dataframe_dtype(df, cfg.dtype_float, cfg.dtype_int)
     df = RR_utils.check_dataframe(df, cfg.class_label, cfg.task)
 
     if cfg.task == 'classification':

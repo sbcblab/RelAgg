@@ -11,6 +11,8 @@ import sklearn
 from sklearn.utils import class_weight
 from sklearn.model_selection import StratifiedKFold, KFold
 import scipy.stats as stats
+from matplotlib.colors import is_color_like
+from tqdm import tqdm
 
 import tensorflow
 from tensorflow.keras import backend as K
@@ -41,6 +43,26 @@ class IsZero(Constraint):
 
 ######################################################################
 
+def sort_values_with_less_memory(df, by_list, ax):
+    pass
+
+def check_colors(colors, d):
+    for c in colors:
+       if not is_color_like(colors[c]) and colors[c] not in d:
+            raise Exception('{} - {} is not a valid color.'.format(c, colors[c]))
+
+def write_large_csv(df, file_name, n_chunks=100):
+    # https://stackoverflow.com/questions/64695352/pandas-to-csv-progress-bar-with-tqdm
+    #n_chunks = len(df.index) / chunk_size
+    write_chunks = np.array_split(df.index, n_chunks) # split into n_chunks chunks
+    print('Writing {}'.format(file_name))
+    for write_chunk, subset in enumerate(tqdm(write_chunks)):
+        if write_chunk == 0: # first row
+            df.loc[subset].to_csv(file_name, mode='w', index=True)
+        else:
+            df.loc[subset].to_csv(file_name, header=None, mode='a', index=True)
+    del write_chunks
+
 def create_output_dir(data_file, output_folder='', dataset_format='.csv'):
     if len(output_folder) > 1:
         if output_folder[-1] != '/':
@@ -65,6 +87,15 @@ def check_dataframe(df, class_label, task):
         df[class_label] = df[class_label].astype(str).str.strip()
     elif task == 'regression':
         df[class_label] = df[class_label].astype(float)
+    del idx
+    return df
+
+def set_dataframe_dtype(df, float_dtype, int_dtype):
+    # https://stackoverflow.com/questions/30494569/how-to-force-pandas-read-csv-to-use-float32-for-all-float-columns
+    df = df.astype({c: float_dtype for c in df.select_dtypes(include='float64').columns})
+    df = df.astype({c: int_dtype for c in df.select_dtypes(include='int64').columns})
+    print(df.dtypes)
+    print(df)
     return df
 
 def min_max_scaling(df, class_label, minVals=None, maxVals=None):
@@ -84,6 +115,11 @@ def min_max_scaling(df, class_label, minVals=None, maxVals=None):
     list_wo_y.remove(class_label)
     new_df = pd.DataFrame(val_array, index=list(df.index.values), columns=list_wo_y)
     new_df.insert(y_index, class_label, y, True) 
+    del y
+    del y_index
+    del val_array
+    del list_wo_y
+    del max_min
     return new_df, minVals, maxVals
 
 def standardize(df, class_label, meanVals=None, stdVals=None):
@@ -102,6 +138,10 @@ def standardize(df, class_label, meanVals=None, stdVals=None):
     list_wo_y.remove(class_label)
     new_df = pd.DataFrame(val_array, index=list(df.index.values), columns=list_wo_y)
     new_df.insert(y_index, class_label, y, True) 
+    del y
+    del y_index
+    del val_array
+    del list_wo_y
     return new_df, meanVals, stdVals
 
 def split_cv(df, task, class_label, k):
@@ -120,6 +160,8 @@ def split_cv(df, task, class_label, k):
     else:
         Split = namedtuple('Split', ['tr', 'te'])
         splits = [Split(tr=np.arange(0, len(X.index)), te=None)]
+    del X
+    del y
     return splits
 
 def split_data(df, splits, class_label, standardized, rescaled):
@@ -156,6 +198,7 @@ def get_XY(df, task, class_label):
         Y = pd.get_dummies(df[cl]).values
     elif task == 'regression':
         Y = df[cl].values
+    del dd
     return X, Y
 
 def write_model(model, file_name):
@@ -183,6 +226,9 @@ def write_model(model, file_name):
                     f.write(' '.join([repr(w) for w in weights.flatten()]) + '\n')
                     f.write(' '.join([repr(b) for b in bias.flatten()]) + '\n')
                     f.write('{}\n'.format(act))
+                    del weights
+                    del bias
+                del weights_bias
 
 def save_accuracy(tr_accuracy, te_accuracy, k, file_name):
     tr_accuracy = np.array(tr_accuracy)
@@ -201,24 +247,37 @@ def save_accuracy(tr_accuracy, te_accuracy, k, file_name):
             print(str(te_accuracy))
             acc_file.write('{} | {}\n'.format(te_accuracy.mean(), te_accuracy.std()))
             print('{} | {}\n'.format(te_accuracy.mean(), te_accuracy.std()))
+    del tr_accuracy
+    del te_accuracy
 
 def save_usage(df, splits, file_name):
     df_usage = pd.DataFrame(np.zeros((len(df.index.values),1)), index=list(df.index.values), columns =["usage"])
     df_usage.iloc[splits.tr] = "train"
     df_usage.iloc[splits.te] = "test"
-    df_usage.to_csv(file_name)    
+    #df_usage.to_csv(file_name)   
+    write_large_csv(df_usage, file_name)
+    del df_usage
 
 def confusion_matrix(df, class_label, model, file_name):
     X, Y = get_XY(df, 'classification', class_label)
+    del Y
     classes = np.sort(df[class_label].unique())
     #y_pred = model.predict_classes(X)
     # https://stackoverflow.com/questions/68836551/keras-attributeerror-sequential-object-has-no-attribute-predict-classes
     y_pred1 = model.predict(X)
+    del X
+    K.clear_session()
     y_pred  = np.argmax(y_pred1, axis=1)
+    del y_pred1
     con_mat = tensorflow.math.confusion_matrix(labels=np.array([np.where(classes==c)[0][0] for c in df[class_label].values]), predictions=y_pred).numpy()
+    del y_pred
     con_mat_norm = np.around(con_mat.astype('float') / con_mat.sum(axis=1)[:, np.newaxis], decimals=2)
+    del con_mat
     con_mat_df = pd.DataFrame(con_mat_norm, index = classes, columns = classes)
+    del con_mat_norm    
+    print('Writing {}'.format(file_name))
     con_mat_df.to_csv(file_name)
+    del con_mat_df
 
 def regression_distance(df, class_label, model, file_name):
     X, Y = get_XY(df, 'regression', class_label)
@@ -228,8 +287,14 @@ def regression_distance(df, class_label, model, file_name):
     comp['prediction'] = estimate
     comp['target'] = Y
     comp.sort_values(by='target', inplace=True)
-    comp.to_csv(file_name)
+    #comp.to_csv(file_name)
+    write_large_csv(comp, file_name)
     comp.plot.line(style=[':', '.']).get_figure().savefig(file_name.replace('.csv', '.pdf'))
+    del index
+    del comp
+    del X
+    del Y
+    del estimate
 
 def apply_modifications(model, custom_objects=None):
 
@@ -257,8 +322,12 @@ def apply_modifications(model, custom_objects=None):
 def save_outputs(df, splits, task, class_label, model, file_name, rescale, standard, minVals=None, maxVals=None, meanVals=None, stdVals=None):
     if rescale:
         df, mv, xv = min_max_scaling(df, class_label, minVals, maxVals)
+        del mv
+        del xv
     if standard:
         df, md, sd = standardize(df, class_label, meanVals, stdVals)
+        del md
+        del sd
 
     df_out = pd.DataFrame(np.zeros((len(df.index.values),1)), index=list(df.index.values), columns =["usage"])
     df_out.iloc[splits.tr] = "train"
@@ -266,12 +335,15 @@ def save_outputs(df, splits, task, class_label, model, file_name, rescale, stand
         df_out.iloc[splits.te] = "test"
     
     X, Y = get_XY(df, task, class_label)
+    del Y
+    print('Predict...')
     pred = model.predict(X)
     if task == 'classification':
         #classification = model.predict_classes(X)
         # https://stackoverflow.com/questions/68836551/keras-attributeerror-sequential-object-has-no-attribute-predict-classes
         classification1 = model.predict(X)
         classification  = np.argmax(classification1, axis=1)
+        del classification1
 
         classes = np.sort(df[class_label].unique())
         
@@ -280,21 +352,32 @@ def save_outputs(df, splits, task, class_label, model, file_name, rescale, stand
             model2.add(layer)
         model2.layers[-1].activation = activations.linear
         model2 = apply_modifications(model2, {'NonPos': NonPos, 'IsZero': IsZero})
-
         brute_out = model2.predict(X)
+        del model2
     elif task == 'regression':
         classification = np.zeros(pred.shape)
         classes = np.array(['target'])
         brute_out = pred
 
+    del X
+    # https://github.com/keras-team/keras/issues/13118
+    K.clear_session()
+        
     for c in range(len(classes)):
         df_out["prob_{}".format(classes[c])] = pred[:,c]
+        
+    del pred
+        
     for o in range(len(brute_out[0])):
         df_out["brute_{}".format(classes[o])] = brute_out[:,o]
     df_out["max_out"] = brute_out.max(axis=1)
+    del brute_out
     df_out["prediction"] = [classes[int(c)] for c in classification]
+    del classification
     df_out[class_label] = df[class_label].values
-    df_out.to_csv(file_name)
+    write_large_csv(df_out, file_name)
+    #df_out.to_csv(file_name)
+    del df_out
 
 def get_class_weights(labels, values, index_type='label'):
     # https://androidkt.com/set-class-weight-for-imbalance-dataset-in-keras/

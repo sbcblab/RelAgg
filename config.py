@@ -1,22 +1,33 @@
 # Bruno Iochins Grisci
-# May 31st, 2020
+# August 4th, 2022
+
+import numpy as np
 
 dataset_file   = "DATA/XOR/xor_2in50_500.csv" # path to data file (must be .csv, features as columns, first row and first column are labels, first column after labels should contain the classes or target values)
-task           = "classification" # "classification" or "regression"
-class_label    = "y"              # label of the column with the classes or target values
-dataset_sep    = ","              # use ',' to separate columns in the dataset
 output_folder  = 'RESULTS/DMDK'        # name of directory in which the results will be saved
-row_index      = 0                # The column that has the row index, None if no index
+
+task            = "classification" # "classification" or "regression"
+class_label     = "y"              # label of the column with the classes or target values
+dataset_sep     = ","              # use ',' to separate columns in the dataset
+row_index       = 0                # The column that has the row index, None if no index
+load_chunksize  = 1000             # Chunksize used to load the dataset
+dtype_float     = np.float64       # default dtype for float
+dtype_int       = np.int64          # default dtype for integer
+# https://vincentteyssier.medium.com/optimizing-the-size-of-a-pandas-dataframe-for-low-memory-environment-5f07db3d72e
+# int8 / uint8 : consumes 1 byte of memory, range between -128/127 or 0/255
+# float16 / int16 / uint16: consumes 2 bytes of memory, range between -32768 and 32767 or 0/65535
+# float32 / int32 / uint32 : consumes 4 bytes of memory, range between -2147483648 and 2147483647
+# float64 / int64 / uint64: consumes 8 bytes of memory
 
 standardized        = False # True if data should be normalized with the z-norm (M=0.0, std=1.0)
 rescaled            = False # True if data should be scaled between 0 and 1
+optimizer           = 'SGD' # 'adam' or 'SGD'
 train_epochs        = 150   # training epochs for training the neural networks
 batch_size          = 16     # batch size for training the neural networks
 weights_constraints = True  # True if neural network biases should be <= 0.0 and if weights and biases in the output layer must be >= 0.0 
 k                   = 1     # number of folds for stratified k-fold cross-validation, if k <= 1 there is no partition and will use all samples
 cv_splits           = None  # if None, the folds of stratified k-fold cross-validation will be divided randomly, if file path to split.py it will use split in the file
 checkpoint          = 15   # periodicity to save the models, if it should not be used set to be equal to train_epochs. If equals to 0 or 1 will save all epochs.
-n_selection         = 2     # number of top ranked input features to be considered for further analyses
 
 regularizer         = 'l1'  # weights regularizer: 'l1', 'l2', or None
 regularization      = 0.001  # parameter for the regularizer, 0.0 if not used
@@ -31,9 +42,13 @@ rel_class      = "pred"       # 'pred', 'true', or class index (integer value), 
 eval_metric    = "f1score"    # 'f1score' or 'accuracy' (if task = "regression" it is automatically the MSE)
 agglutinate    = False        # if True, the relevance score of a categorical input feature will be the average score of the individual binary categories
 kendall_tau    = False        # if True, the kendall tau difference between the ranking scores of each fold and between training and test sets will be computed
+venn           = False        # if True, the venn diagram between different rankings is computed 
+n_selection    = 2            # number of top ranked input features to be considered for further analyses
 
-class_colors   = ['GREEN', 'ORANGE'] # list of colors to be assigned to the classes in the data, options as below:
-                                     # 'RED', 'BLUE', 'YELLOW', 'GREEN', 'ORANGE', 'BLACK', 'CYAN', 'SILVER', 'MAGENTA', 'CREAM', 'DRKBRW', 'BEIGE', 'WHITE'
+# list of colors to be assigned to the classes in the data, options as below:
+# 'RED', 'BLUE', 'YELLOW', 'GREEN', 'ORANGE', 'BLACK', 'CYAN', 'SILVER', 'MAGENTA', 'CREAM', 'DRKBRW', 'BEIGE', 'WHITE'
+# or pass a list of hexcolor strings such as '#9189FF', '#FFA388', '#882E81'...
+class_colors   = ['GREEN', 'ORANGE'] 
 viz_method     = 'tsne' # 'pca' or 'tsne', use 'tsne' for the weighted t-SNE
 perplexity     = 50     # perplexity value for t-SNE
 n_iter         = 5000   # number of iterations for t-SNE
